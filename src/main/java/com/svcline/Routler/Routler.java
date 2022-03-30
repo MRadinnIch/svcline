@@ -2,7 +2,9 @@ package com.svcline.Routler;
 
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
+import com.svcline.models.LineResponse;
 
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 
 // Route handler
@@ -60,7 +62,7 @@ public class Routler {
         System.out.println("\n");
     }
 
-    public static String handle(String method, String path, HttpRequest request, HttpResponse response) {
+    public static LineResponse handle(String method, String path, HttpRequest request, HttpResponse response) {
         for (Route route : routes) {
             // If we've found our route, and it can be executed. Execute!
             //if (route.equalsTo(path) && route.isExecutable(method)) {
@@ -69,6 +71,6 @@ public class Routler {
             }
         }
 
-        return "{\"method\" : \"" + method + "\", \"status\" : \"Not implemented\"}";
+        return new LineResponse(HttpURLConnection.HTTP_NOT_IMPLEMENTED, "{\"method\" : \"" + method + "\", \"status\" : \"Not implemented\"}");
     }
 }

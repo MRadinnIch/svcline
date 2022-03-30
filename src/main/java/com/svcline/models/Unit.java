@@ -1,4 +1,4 @@
-package com.svcline.prodline;
+package com.svcline.models;
 
 public class Unit {
     private String action;

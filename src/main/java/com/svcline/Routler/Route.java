@@ -2,6 +2,7 @@ package com.svcline.Routler;
 
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
+import com.svcline.models.LineResponse;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,7 +42,7 @@ public class Route {
         return pairs;
     }
 
-    public String execute(Route route, HttpRequest request, HttpResponse response) {
+    public LineResponse execute(Route route, HttpRequest request, HttpResponse response) {
         switch (request.getMethod()) {
             case "GET":
                 return handler.get(route, request, response);

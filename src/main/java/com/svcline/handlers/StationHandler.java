@@ -2,8 +2,10 @@ package com.svcline.handlers;
 
 import com.svcline.Routler.Route;
 import com.svcline.Routler.Routeable;
+import com.svcline.models.Error;
+import com.svcline.models.LineResponse;
 import com.svcline.svcline;
-import com.svcline.prodline.Unit;
+import com.svcline.models.Unit;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
@@ -16,19 +18,18 @@ import com.google.gson.Gson;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.net.HttpURLConnection.*;
+
 public class StationHandler implements Routeable {
     private static final String COLLECTION = "units";
     private static final Gson gson = new Gson();
 
-    private String getAll() {
-        String json = "";
-
+    private LineResponse getAll() {
+        LineResponse lineResponse;
         try {
             Firestore db = svcline.getFirestore();
 
-            // asynchronously retrieve all units
             ApiFuture<QuerySnapshot> query = db.collection(COLLECTION).get();
-            //db.collection("").document("").get();
 
             QuerySnapshot querySnapshot = query.get();
             List<QueryDocumentSnapshot> documents = querySnapshot.getDocuments();
@@ -38,21 +39,21 @@ public class StationHandler implements Routeable {
                 units.add(document.toObject(Unit.class));
             }
 
-            json = gson.toJson(units);
+            lineResponse = new LineResponse(gson.toJson(units));
         } catch (Exception e) {
             e.printStackTrace();
+            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, gson.toJson(new Error(e.getMessage())));
         }
 
-        return json;
+        return lineResponse;
     }
 
-    private String getFor(String jbId) {
+    private LineResponse getFor(String jbId) {
         if (jbId == null || jbId.isBlank()) {
-            return null;
+            return new LineResponse(HTTP_BAD_REQUEST, gson.toJson(new Error("Error while looking up unit due to miss-crafted id.")));
         }
 
-        String json = null;
-
+        LineResponse lineResponse;
         try {
             Firestore db = svcline.getFirestore();
 
@@ -61,35 +62,35 @@ public class StationHandler implements Routeable {
             DocumentSnapshot document = query.get();
             Unit unit = document.toObject(Unit.class);
 
-            json = gson.toJson(unit);
+            lineResponse = new LineResponse(gson.toJson(unit));
         } catch (Exception e) {
             e.printStackTrace();
+            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, gson.toJson(new Error(e.getMessage())));
         }
 
-        return json;
+        return lineResponse;
     }
 
-    public String get(Route route, HttpRequest request, HttpResponse response) {
-        System.out.println("StationHandler.get: " + request.getPath());
-        String json;
+    public LineResponse get(Route route, HttpRequest request, HttpResponse response) {
+        LineResponse lineResponse;
 
         if (route.isNaked()) {
-            json = getAll();
+            lineResponse = getAll();
         } else {
-            json = getFor(route.getPathVal("{jbId}"));
+            lineResponse = getFor(route.getPathVal("{jbId}"));
         }
 
-        return json;
+        return lineResponse;
     }
 
     @Override
-    public String put(Route route, HttpRequest request, HttpResponse response) {
+    public LineResponse put(Route route, HttpRequest request, HttpResponse response) {
         String jbId = route.getPathVal("{jbId}");
         if (jbId == null || jbId.isBlank()) {
-            return null;
+            return new LineResponse(HTTP_BAD_REQUEST, gson.toJson(new Error("Error while PUT due to miss-crafted id.")));
         }
 
-        String json = null;
+        LineResponse lineResponse;
         try {
             Firestore db = svcline.getFirestore();
 
@@ -97,49 +98,52 @@ public class StationHandler implements Routeable {
             if (unit.validate() && unit.getJbId().equalsIgnoreCase(jbId)) {
                 db.collection(COLLECTION).document(jbId).set(unit);
 
-                json = gson.toJson(unit);
+                lineResponse = new LineResponse(gson.toJson(unit));
             } else {
-                return null;
+                lineResponse = new LineResponse(HTTP_BAD_REQUEST, gson.toJson(new Error("Failed to PUT for id " + jbId)));
             }
         } catch (Exception e) {
             e.printStackTrace();
+            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, gson.toJson(new Error(e.getMessage())));
         }
 
-        return json;
+        return lineResponse;
     }
 
     @Override
-    public String patch(Route route, HttpRequest request, HttpResponse response) {
-        return null;
+    public LineResponse patch(Route route, HttpRequest request, HttpResponse response) {
+        return new LineResponse(HTTP_NOT_FOUND, gson.toJson(new Error("PATCH not implemented yet!")));
     }
 
     @Override
-    public String post(Route route, HttpRequest request, HttpResponse response) {
+    public LineResponse post(Route route, HttpRequest request, HttpResponse response) {
+        LineResponse lineResponse;
 
-        String json = null;
-        /*try {
-            Firestore db = gcptest.getFirestore();
+        try {
+            Firestore db = svcline.getFirestore();
 
             Unit unit = gson.fromJson(request.getReader(), Unit.class);
-            if (unit.validate()) {
-                //db.collection(COLLECTION).document().create().
+            if(!unit.validate()) {
+                lineResponse = new LineResponse(HTTP_NOT_ACCEPTABLE, gson.toJson(new Error("Failed to validate input object " + unit)));
+            }
+            else if (getFor(unit.getJbId()) != null) {
+                lineResponse = new LineResponse(HTTP_CONFLICT, gson.toJson(new Error("Failed to create existing object " + unit)));
+            } else {    // Validations passed, create document
                 db.collection(COLLECTION).document(unit.getJbId()).set(unit);
-
-                json = gson.toJson(unit);
-            } else {
-                return null;
+                lineResponse = new LineResponse(HTTP_CREATED, gson.toJson(unit));
             }
         } catch (Exception e) {
             e.printStackTrace();
-        }*/
+            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, gson.toJson(new Error(e.getMessage())));
+        }
 
-        return json;
+        return lineResponse;
 
     }
 
     @Override
-    public String delete(Route route, HttpRequest request, HttpResponse response) {
-        return null;
+    public LineResponse delete(Route route, HttpRequest request, HttpResponse response) {
+        return new LineResponse(HTTP_NOT_FOUND, gson.toJson(new Error("DELETE not implemented yet!")));
     }
 }
 
