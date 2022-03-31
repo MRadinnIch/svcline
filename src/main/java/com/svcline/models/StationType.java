@@ -1,5 +1,5 @@
 package com.svcline.models;
 
 public enum StationType {
-    PRODUCTION, SERVICE
+    START, END, PRODUCTION, SERVICE
 }

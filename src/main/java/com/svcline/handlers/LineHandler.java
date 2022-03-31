@@ -3,24 +3,24 @@ package com.svcline.handlers;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
-import com.svcline.Routler.Route;
-import com.svcline.Routler.Routeable;
 import com.svcline.handlers.db.DbLineFacacde;
 import com.svcline.models.Error;
 import com.svcline.models.LineItem;
 import com.svcline.models.LineResponse;
-import com.svcline.models.State;
 import com.svcline.prodline.ProductionLine;
+import com.svcline.routler.Route;
+import com.svcline.routler.Routeable;
 import com.svcline.svcline;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 
 import static java.net.HttpURLConnection.*;
 
 public class LineHandler implements Routeable {
     private static final String ITEM_ID = "{itemId}";
     private static final Gson gson = new Gson();
-    //private static ProductionLine productionLine = svcline.getProductionLine();
 
     @Override
     public LineResponse get(Route route, HttpRequest request, HttpResponse response) {
@@ -45,25 +45,37 @@ public class LineHandler implements Routeable {
         LineResponse lineResponse;
         ProductionLine productionLine = svcline.getProductionLine();
         try {
-            LineItem lineItem = gson.fromJson(request.getReader(), LineItem.class);
-            LineItem actualItem = DbLineFacacde.getFor(route.getPathVal(ITEM_ID));
+            LineItem lineItemIn = new LineItem(request);
+            LineItem actualItemDb = DbLineFacacde.getFor(itemId);
 
-            if (actualItem == null || !actualItem.validate()) { // Check and validate the original item
-                lineResponse = new LineResponse(HTTP_BAD_REQUEST, gson.toJson(new Error("Failed to obtain/validate original item for id '" + itemId +
-                                                                                        "'. Check arguments and try again.")));
-            } else if (!lineItem.validate() || !lineItem.getId().equalsIgnoreCase(itemId)) { // Check and validate the "new" item
-                lineResponse = new LineResponse(HTTP_BAD_REQUEST, gson.toJson(new Error("Failed to update/validate item for id '" + itemId +
-                                                                                        "'. Check arguments.")));
-            } else if (!productionLine.isInCorrectLineOrder(actualItem, lineItem.getCurrentStationId())) {
-                lineResponse = new LineResponse(HTTP_NOT_ACCEPTABLE, gson.toJson(new Error("Item is not in correct production line order. ")));
+            /* Basic checks must be performed before we advance to the next station, those being:
+             * 1. An item must have previously been created, meaning stored in the DB (with all passed checks previously)
+             * 2. The new state the item moves to is provided in the body, which we validate,
+             * 3. Body ID must match Path ID. The Path ID is the master!
+             */
+
+            if (actualItemDb == null) { // Check and validate the original item
+                lineResponse = new LineResponse(HTTP_NOT_FOUND,
+                                                gson.toJson(new Error("Original item not found for id '" + itemId + "'.")));
+            } else if (!lineItemIn.validate()) { // Check and validate the "new" item
+                lineResponse = new LineResponse(HTTP_BAD_REQUEST,
+                                                gson.toJson(new Error("Failed to validate item for id '" + itemId + "'. Check arguments.")));
+            } else if (!lineItemIn.getId().equalsIgnoreCase(itemId)) { // Check and validate the "new" item
+                lineResponse = new LineResponse(HTTP_CONFLICT,
+                                                gson.toJson(new Error("Body ID not matching path ID. Check arguments.")));
             } else {
-                // Is state transition allowed?
-                lineItem.setPreviousStationId(actualItem.getCurrentStationId());
-                DbLineFacacde.set(itemId, lineItem);
+                // We handle the line transition in the production line
+                LineItem verifiedItem = productionLine.toNextStation(actualItemDb, lineItemIn);
 
-                lineResponse = new LineResponse(gson.toJson(lineItem));
+                DbLineFacacde.set(verifiedItem);
+
+                lineResponse = new LineResponse(gson.toJson(verifiedItem));
+
             }
-        } catch (Exception e) {
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+            lineResponse = new LineResponse(HTTP_CONFLICT, gson.toJson(new Error(e.getMessage())));
+        } catch (IOException | ExecutionException | InterruptedException e) {
             e.printStackTrace();
             lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, gson.toJson(new Error(e.getMessage())));
         }
@@ -73,7 +85,7 @@ public class LineHandler implements Routeable {
 
     @Override
     public LineResponse patch(Route route, HttpRequest request, HttpResponse response) {
-        return null;
+        return new LineResponse(HTTP_NOT_IMPLEMENTED, gson.toJson(new Error("PUT method not implemented")));
     }
 
     @Override
@@ -82,17 +94,15 @@ public class LineHandler implements Routeable {
 
         ProductionLine productionLine = svcline.getProductionLine();
         try {
-            LineItem lineItem = gson.fromJson(request.getReader(), LineItem.class);
-            if (lineItem.getId() == null) {
+            String id = gson.fromJson(request.getReader(), LineItem.class).getId();
+            if (id == null) {
                 lineResponse = new LineResponse(HTTP_NOT_ACCEPTABLE, gson.toJson(new Error("Input item has no id.")));
-            } else if (DbLineFacacde.getFor(lineItem.getId()) != null) {
-                lineResponse = new LineResponse(HTTP_CONFLICT, gson.toJson(new Error("Failed to create existing object " + lineItem)));
+            } else if (DbLineFacacde.getFor(id) != null) {
+                lineResponse = new LineResponse(HTTP_CONFLICT, gson.toJson(new Error("Failed to create existing object for existing id: " + id)));
             } else {    // Validations passed, create document
-                lineItem.setState(State.START);
-                lineItem.setCurrentStationId(productionLine.getStartStationId());
-                lineItem.clearPreviousStation();
+                LineItem lineItem = productionLine.startProduction(id);
 
-                DbLineFacacde.set(lineItem.getId(), lineItem);
+                DbLineFacacde.set(lineItem);
 
                 lineResponse = new LineResponse(HTTP_CREATED, gson.toJson(lineItem));
             }
@@ -107,7 +117,7 @@ public class LineHandler implements Routeable {
 
     @Override
     public LineResponse delete(Route route, HttpRequest request, HttpResponse response) {
-        return null;
+        return new LineResponse(HTTP_NOT_IMPLEMENTED, gson.toJson(new Error("DELETE method not implemented")));
     }
 
     private LineResponse getFor(String itemId) {

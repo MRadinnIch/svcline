@@ -1,12 +1,30 @@
 package com.svcline.models;
 
+import com.google.cloud.firestore.annotation.Exclude;
+import com.google.cloud.functions.HttpRequest;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import java.io.IOException;
+
 public class LineItem {
+    private static final Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+
     private String id;
     private String currentStationId;
     private String previousStationId;
     private State state;
 
     public LineItem() {
+    }
+
+    public LineItem(HttpRequest request) throws IOException {
+        LineItem li = gson.fromJson(request.getReader(), LineItem.class);
+
+        this.id = li.id;
+        this.currentStationId = li.currentStationId;
+        this.previousStationId = li.previousStationId;
+        this.state = li.state;
     }
 
     public LineItem(String id, String currentStationId) {
@@ -54,14 +72,6 @@ public class LineItem {
         this.previousStationId = previousStationId;
     }
 
-    public void clearPreviousStation() {
-        this.previousStationId = null;
-    }
-
-    public void clearCurrentStation() {
-        this.previousStationId = null;
-    }
-
     public State getState() {
         return state;
     }
@@ -70,10 +80,31 @@ public class LineItem {
         this.state = state;
     }
 
+    public void clearPreviousStation() {
+        this.previousStationId = null;
+    }
+
+    public void clearCurrentStation() {
+        this.previousStationId = null;
+    }
+
     public boolean validate() {
-        return true;
-            //return !(this.id == null || this.currentStationId == null || (this.previousStationId == null && this.state != State.START) ||
-            //                                                                (this.previousStationId != null && this.state == State.START ));
+        return !(this.id == null || this.currentStationId == null);
+    }
+
+    @Exclude
+    public boolean isScrapped() {
+        return (this.state == State.SCRAP);
+    }
+
+    @Exclude
+    public boolean isDone() {
+        return (this.state == State.DONE);
+    }
+
+    @Exclude
+    public boolean isFailed() {
+        return (this.state == State.FAIL);
     }
 
     @Override

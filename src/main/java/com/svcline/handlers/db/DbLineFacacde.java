@@ -13,10 +13,10 @@ import java.util.concurrent.ExecutionException;
 public class DbLineFacacde {
     private static final String COLLECTION = "lineItem";
 
-    public static void set(String id, LineItem lineItem) {
+    public static void set(LineItem lineItem) {
         Firestore db = svcline.getFirestore();
 
-        ApiFuture<WriteResult> result = db.collection(COLLECTION).document(lineItem.getId()).set(lineItem);
+        db.collection(COLLECTION).document(lineItem.getId()).set(lineItem);
     }
 
     public static LineItem getFor(@NonNull String itemId) throws ExecutionException, InterruptedException {

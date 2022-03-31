@@ -7,7 +7,8 @@ import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
-import com.svcline.Routler.Routler;
+import com.svcline.models.Error;
+import com.svcline.routler.Routler;
 import com.svcline.handlers.LineHandler;
 import com.svcline.handlers.StationHandler;
 import com.svcline.models.*;
@@ -15,6 +16,7 @@ import com.svcline.prodline.ProductionLine;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,6 +25,7 @@ import java.util.List;
 public class svcline implements HttpFunction {
     private static Firestore firestore = null;
     private static ProductionLine productionLine = null;
+    private static final Gson gson = new Gson();
 
     private static final String CONTENT_TYPE = "application/json;charset=utf-8";
     private static final String SERVICE_ACCOUNT = "radinn-rindus-firebase-adminsdk-ha599-fbeceb59df.json";
@@ -53,8 +56,8 @@ public class svcline implements HttpFunction {
             response.setStatusCode(lineResponse.getCode());
             os.write(bytes(lineResponse.getJson()));
         } else {
-            response.setStatusCode(lineResponse.getCode());
-            os.write(bytes(lineResponse.getJson()));
+            response.setStatusCode(HttpURLConnection.HTTP_INTERNAL_ERROR);
+            os.write(bytes(gson.toJson(new Error("Unexpected error while handling request."))));
         }
     }
 
@@ -80,20 +83,20 @@ public class svcline implements HttpFunction {
     private void initProductionLine() {
         if(productionLine == null) {
             HashMap<String, Station> stationMap = new HashMap<>();
-            Station station1 = new Station("1001", "Start Station", StationType.PRODUCTION,
-                                           new ArrayList<>(List.of(State.START, State.FAIL)));
+            Station station1 = new Station("1001", "Start Station", StationType.START,
+                                           new ArrayList<>(List.of(State.PASS, State.FAIL)));
 
             Station station2 = new Station("1002", "Second Station", StationType.PRODUCTION,
-                                           new ArrayList<>(List.of(State.FAIL, State.PASS)));
+                                           new ArrayList<>(List.of(State.PASS, State.FAIL)));
 
             Station station3 = new Station("1003", "Third Station", StationType.PRODUCTION,
-                                           new ArrayList<>(List.of(State.FAIL, State.PASS)));
+                                           new ArrayList<>(List.of(State.PASS, State.FAIL)));
 
-            Station station4 = new Station("1004", "Fourth Station", StationType.PRODUCTION,
-                                           new ArrayList<>(List.of(State.FAIL, State.PASS)));
+            Station station4 = new Station("1004", "End Station", StationType.END,
+                                           new ArrayList<>(List.of(State.PASS, State.FAIL)));
 
             Station serviceStation = new Station("2001", "Service Station", StationType.SERVICE,
-                                                 new ArrayList<>(List.of(State.FAIL, State.PASS, State.SCRAP)));
+                                                 new ArrayList<>(List.of(State.PASS, State.RETRY, State.SCRAP)));
             stationMap.put(station1.getId(), station1);
             stationMap.put(station2.getId(), station2);
             stationMap.put(station3.getId(), station3);
@@ -106,10 +109,11 @@ public class svcline implements HttpFunction {
             stationOrder.put(station3.getId(), station4.getId());
 
             productionLine = new ProductionLine();
-            productionLine.init(station1.getId(), serviceStation.getId(), stationMap, stationOrder);
-
-            Gson gson = new Gson();
-            System.out.println("Config:\n" + gson.toJson(getProductionLine()));
+            try {
+                productionLine.init(stationMap, stationOrder);
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            }
         }
     }
 

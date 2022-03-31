@@ -50,4 +50,21 @@ public class Station {
     public boolean isServiceStation() {
         return this.stationType == StationType.SERVICE;
     }
+
+    public boolean isEndStation() {
+        return this.stationType == StationType.END;
+    }
+
+    public boolean isStartStation() {
+        return this.stationType == StationType.START;
+    }
+
+    public boolean allowedState(State stateToCompare) {
+        for (State state : allowedStates) {
+            if(state == stateToCompare)
+                return true;
+        }
+
+        return false;
+    }
 }
