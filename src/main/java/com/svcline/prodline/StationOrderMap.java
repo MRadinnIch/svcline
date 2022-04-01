@@ -3,7 +3,7 @@ package com.svcline.prodline;
 import java.util.HashMap;
 
 public class StationOrderMap {
-    private final HashMap<String, String> stationOrder;
+    private HashMap<String, String> stationOrder;
 
     public StationOrderMap() {
         stationOrder = new HashMap<>();
@@ -15,5 +15,9 @@ public class StationOrderMap {
 
     public HashMap<String, String> getStationOrder() {
         return stationOrder;
+    }
+
+    public void setStationOrder(HashMap<String, String> stationOrder) {
+        this.stationOrder = stationOrder;
     }
 }

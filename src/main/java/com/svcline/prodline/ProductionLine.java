@@ -120,6 +120,22 @@ public class ProductionLine {
         return new LineItem(id, startStationId, null, State.START);
     }
 
+    public HashMap<String, Station> getStationMap() {
+        return stationMap;
+    }
+
+    public void setStationMap(HashMap<String, Station> stationMap) {
+        this.stationMap = stationMap;
+    }
+
+    public HashMap<String, String> getStationTransitionMap() {
+        return stationTransitionMap;
+    }
+
+    public void setStationTransitionMap(HashMap<String, String> stationTransitionMap) {
+        this.stationTransitionMap = stationTransitionMap;
+    }
+
     public LineItem toNextStation(@NotNull LineItem actualItem, @NotNull LineItem currentLineItem) throws IllegalStateException, InstantiationException {
         initCheck();
 
@@ -127,7 +143,8 @@ public class ProductionLine {
         Station currentStation = getStation(currentLineItem.getCurrentStationId());
 
         if (!isInCorrectLineOrder(actualItem, currentLineItem)) {
-            throw new IllegalStateException("Item is not in correct production line station.");
+            throw new IllegalStateException("This item is not at the correct production line station. Correct station is: " +
+                                            getNextStationId(actualItem.currentStationId));
         } else if (actualItem.isScrapped()) {
             throw new IllegalStateException("Scrapped items cannot be processed");
         } else if (actualItem.isDone()) {
@@ -152,10 +169,10 @@ public class ProductionLine {
                     lineItem.setCurrentStationId(this.endStationId);
                 } else {
                     lineItem.setState(newState);
-                    lineItem.setCurrentStationId(getNextStationId(lineItem.getPreviousStationId()));
+                    //lineItem.setCurrentStationId(...); We do not set current station ID since the one passed in is correct
                 }
 
-                lineItem.setPreviousStationId(currentLineItem.getCurrentStationId());
+                lineItem.setPreviousStationId(actualItem.getCurrentStationId());
 
                 break;
 

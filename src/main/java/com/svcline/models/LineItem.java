@@ -4,27 +4,28 @@ import com.google.cloud.firestore.annotation.Exclude;
 import com.google.cloud.functions.HttpRequest;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.svcline.prodline.Transition;
 
 import java.io.IOException;
 
-public class LineItem {
-    private static final Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+public class LineItem extends Transition {
+    private static final Gson gson = new Gson();
 
-    private String id;
-    private String currentStationId;
+    //private String id;
+    //private String currentStationId;
     private String previousStationId;
-    private State state;
+    //private State state;
 
     public LineItem() {
     }
 
-    public LineItem(HttpRequest request) throws IOException {
-        LineItem li = gson.fromJson(request.getReader(), LineItem.class);
+    public LineItem(Transition tr) throws IOException {
+        //Transition li = ;
 
-        this.id = li.id;
-        this.currentStationId = li.currentStationId;
-        this.previousStationId = li.previousStationId;
-        this.state = li.state;
+        this.id = tr.getId();
+        this.currentStationId = tr.getCurrentStationId();
+        this.previousStationId = null;
+        this.state = tr.getState();
     }
 
     public LineItem(String id, String currentStationId) {

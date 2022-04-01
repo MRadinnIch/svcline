@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutionException;
 
 public class DbProdLineConfiguration {
     private static final String COLLECTION = "productLineConfiguration";
-    private static final String ITEM_ID = "demo2-configuration";
+    private static final String ITEM_ID = "demo-configuration";
 
     public static void write(ProductLineConfiguration configuration) {
         Firestore db = svcline.getFirestore();

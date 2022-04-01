@@ -61,14 +61,14 @@ public class Routler {
         System.out.println("\n");
     }
 
-    public static LineResponse handle(String method, String path, HttpRequest request, HttpResponse response) {
+    public static LineResponse handle(HttpRequest request, HttpResponse response) {
         for (Route route : routes) {
             // If we've found our route, and it can be executed. Execute!
-            if (route.equalsTo(path)) {
+            if (route.equalsTo(request.getPath())) {
                 return route.execute(route, request, response);
             }
         }
 
-        return new LineResponse(HttpURLConnection.HTTP_NOT_IMPLEMENTED, "{\"method\" : \"" + method + "\", \"status\" : \"Not implemented\"}");
+        return new LineResponse(HttpURLConnection.HTTP_NOT_IMPLEMENTED, "{\"method\" : \"" + request.getMethod() + "\", \"status\" : \"Not implemented\"}");
     }
 }

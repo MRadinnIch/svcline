@@ -8,6 +8,7 @@ import com.svcline.models.Error;
 import com.svcline.models.LineItem;
 import com.svcline.models.LineResponse;
 import com.svcline.prodline.ProductionLine;
+import com.svcline.prodline.Transition;
 import com.svcline.routler.Route;
 import com.svcline.routler.Routeable;
 import com.svcline.svcline;
@@ -45,7 +46,7 @@ public class LineHandler implements Routeable {
         LineResponse lineResponse;
         ProductionLine productionLine = svcline.getProductionLine();
         try {
-            LineItem lineItemIn = new LineItem(request);
+            LineItem lineItemIn = new LineItem(gson.fromJson(request.getReader(), Transition.class));
             LineItem actualItemDb = DbLineFacacde.getFor(itemId);
 
             /* Basic checks must be performed before we advance to the next station, those being:
@@ -70,7 +71,6 @@ public class LineHandler implements Routeable {
                 DbLineFacacde.set(verifiedItem);
 
                 lineResponse = new LineResponse(gson.toJson(verifiedItem));
-
             }
         } catch (IllegalStateException e) {
             e.printStackTrace();
@@ -97,7 +97,7 @@ public class LineHandler implements Routeable {
 
         ProductionLine productionLine = svcline.getProductionLine();
         try {
-            String id = gson.fromJson(request.getReader(), LineItem.class).getId();
+            String id = gson.fromJson(request.getReader(), Transition.class).getId();
             if (id == null) {
                 lineResponse = new LineResponse(HTTP_NOT_ACCEPTABLE, gson.toJson(new Error("Input item has no id.")));
             } else if (DbLineFacacde.getFor(id) != null) {

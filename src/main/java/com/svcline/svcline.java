@@ -68,7 +68,7 @@ public class svcline implements HttpFunction {
         }
 
         // We came so far, now handle the request
-        LineResponse lineResponse = Routler.handle(request.getMethod(), request.getPath(), request, response);
+        LineResponse lineResponse = Routler.handle(request, response);
 
         // Attempt returning the actual response
         try {
@@ -103,22 +103,20 @@ public class svcline implements HttpFunction {
         if (productionLine == null) {
             productionLine = new ProductionLine();
 
-            ProductLineConfiguration productLineConfiguration = ProductLineConfiguration.loadFromDb();
-            /*productLineConfiguration.loadTestConfiguration();
+            //ProductLineConfiguration productLineConfiguration = ProductLineConfiguration.loadFromDb();
+            ProductLineConfiguration productLineConfiguration = new  ProductLineConfiguration();
+            productLineConfiguration.loadTestConfiguration();
             productLineConfiguration.writeToDb();
-            ProductLineConfiguration plcTest = ProductLineConfiguration.loadFromDb();*/
 
             productionLine.init(productLineConfiguration.getConfiguredStationMap(), productLineConfiguration.getConfiguredStationOrder());
-
-            System.out.println("Production line setup:\n" + gson.toJson(productLineConfiguration));
         }
     }
 
     public static void reloadProductionLineConfiguration() {
-        ProductLineConfiguration plcTest = ProductLineConfiguration.loadFromDb("demo2-configuration");
+        ProductLineConfiguration cfg = ProductLineConfiguration.loadFromDb("demo2-configuration");
         try {
-            productionLine.init(plcTest.getConfiguredStationMap(), plcTest.getConfiguredStationOrder());
-            System.out.println("Production line setup:\n" + gson.toJson(plcTest));
+            productionLine.init(cfg.getConfiguredStationMap(), cfg.getConfiguredStationOrder());
+            System.out.println("Production line setup:\n" + gson.toJson(cfg));
         } catch (InstantiationException e) {
             e.printStackTrace();
         }

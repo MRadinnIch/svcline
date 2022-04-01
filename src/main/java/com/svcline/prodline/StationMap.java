@@ -5,7 +5,7 @@ import com.svcline.models.Station;
 import java.util.HashMap;
 
 public class StationMap {
-    private final HashMap<String, Station> stationMap;
+    private HashMap<String, Station> stationMap;
 
     public StationMap() {
         stationMap = new HashMap<>();
@@ -17,6 +17,10 @@ public class StationMap {
 
     public HashMap<String, Station> getStationMap() {
         return stationMap;
+    }
+
+    public void setStationMap(HashMap<String, Station> stationMap) {
+        this.stationMap = stationMap;
     }
 
     public boolean registered(String k) {

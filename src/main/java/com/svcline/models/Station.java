@@ -1,5 +1,7 @@
 package com.svcline.models;
 
+import com.google.cloud.firestore.annotation.Exclude;
+
 import java.util.ArrayList;
 
 public class Station {
@@ -50,14 +52,17 @@ public class Station {
         this.allowedStates = allowedStates;
     }
 
+    @Exclude
     public boolean isServiceStation() {
         return this.stationType == StationType.SERVICE;
     }
 
+    @Exclude
     public boolean isEndStation() {
         return this.stationType == StationType.END;
     }
 
+    @Exclude
     public boolean isStartStation() {
         return this.stationType == StationType.START;
     }
