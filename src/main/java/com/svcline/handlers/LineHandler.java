@@ -75,6 +75,9 @@ public class LineHandler implements Routeable {
         } catch (IllegalStateException e) {
             e.printStackTrace();
             lineResponse = new LineResponse(HTTP_CONFLICT, gson.toJson(new Error(e.getMessage())));
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+            lineResponse = new LineResponse(HTTP_UNAVAILABLE, gson.toJson(new Error(e.getMessage())));
         } catch (IOException | ExecutionException | InterruptedException e) {
             e.printStackTrace();
             lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, gson.toJson(new Error(e.getMessage())));
@@ -106,7 +109,10 @@ public class LineHandler implements Routeable {
 
                 lineResponse = new LineResponse(HTTP_CREATED, gson.toJson(lineItem));
             }
-        } catch (Exception e) {
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+            lineResponse = new LineResponse(HTTP_UNAVAILABLE, gson.toJson(new Error(e.getMessage())));
+        } catch (IOException | ExecutionException | InterruptedException e) {
             e.printStackTrace();
             lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, gson.toJson(new Error(e.getMessage())));
         }

@@ -1,5 +1,6 @@
 package com.svcline.handlers;
 
+import com.svcline.prodline.ProductionLine;
 import com.svcline.routler.Route;
 import com.svcline.routler.Routeable;
 import com.svcline.models.Error;
@@ -112,7 +113,8 @@ public class StationHandler implements Routeable {
 
     @Override
     public LineResponse patch(Route route, HttpRequest request, HttpResponse response) {
-        return new LineResponse(HTTP_NOT_FOUND, gson.toJson(new Error("PATCH not implemented yet!")));
+        svcline.reloadProductionLineConfiguration();
+        return new LineResponse(HTTP_ACCEPTED, gson.toJson(new Error("Production line configuration reloaded")));
     }
 
     @Override

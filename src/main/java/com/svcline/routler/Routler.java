@@ -43,7 +43,6 @@ public class Routler {
             return false;
 
         for (Route route : routes) {
-            //if (method.equalsIgnoreCase(route.getMethod()) && route.equalsTo(path)) {
             if (route.equalsTo(path)) {
                 System.out.println("Route already exists, failed to register!!!");
                 return true;
@@ -65,7 +64,6 @@ public class Routler {
     public static LineResponse handle(String method, String path, HttpRequest request, HttpResponse response) {
         for (Route route : routes) {
             // If we've found our route, and it can be executed. Execute!
-            //if (route.equalsTo(path) && route.isExecutable(method)) {
             if (route.equalsTo(path)) {
                 return route.execute(route, request, response);
             }

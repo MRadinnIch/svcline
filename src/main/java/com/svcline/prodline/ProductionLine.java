@@ -7,61 +7,75 @@ import com.svcline.models.StationType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class ProductionLine {
     private String startStationId;
     private String endStationId;
     private String serviceStationId;
     private HashMap<String, Station> stationMap;
-    private HashMap<String, String> stationOrder;
-    private boolean initialized;
+    private HashMap<String, String> stationTransitionMap;
+
+    private boolean init = false;
 
     public ProductionLine() {
         this.stationMap = null;
         this.startStationId = null;
         this.serviceStationId = null;
-        this.stationOrder = null;
-        this.initialized = false;
+        this.endStationId = null;
+        this.stationTransitionMap = null;
     }
 
-    public boolean init(HashMap<String, Station> productionLine, HashMap<String, String> stationOrder) throws InstantiationException {
-        // The production line must be set and the start and service stations must exist
-        //if (productionLine != null && !productionLine.isEmpty() && productionLine.containsKey(startStationId) && productionLine.containsKey(serviceStationId)) {
-        if (productionLine != null && !productionLine.isEmpty() && !hasDuplicateStations()) {
-            // Check if stations are correctly defined, meaning START, END and SERVICE
-            int start = 0;
-            int end = 0;
-            int service = 0;
-            for (Station station : productionLine.values()) {
-                if (station.getStationType() == StationType.START) {
-                    this.startStationId = station.getId();
-                    start++;
-                } else if (station.getStationType() == StationType.END) {
-                    this.endStationId = station.getId();
-                    end++;
-                } else if (station.getStationType() == StationType.SERVICE) {
-                    this.serviceStationId = station.getId();
-                    service++;
-                }
-            }
+    private void initCheck() throws InstantiationException {
+        if (!this.init)
+            throw new InstantiationException("Production line has not been done. Aborting execution.");
+    }
 
-            // We must have three stations
-            if (start == 0 || end == 0 || service == 0)
-                throw new InstantiationException("Initialization failed, production line must one START, STOP and SERVICE station.");
-
-            this.stationMap = productionLine;
-            this.stationOrder = stationOrder;
-            this.initialized = true;
-
-            return true;
+    private boolean stationOrderCorrect() {
+        for (Map.Entry<String, String> entry : stationTransitionMap.entrySet()) {
+            if (!stationMap.containsKey(entry.getKey()) || !stationMap.containsKey(entry.getValue()))
+                return false;
         }
 
-        return false;
+        return true;
     }
 
-    private boolean hasDuplicateStations() {
-        // @todo: Implement method
-        return false;
+    public void init(StationMap stationMapInit, StationOrderMap stationOrderMapInit) throws InstantiationException {
+        // We must have three stations
+        if (stationMapInit == null || stationMapInit.getStationMap().isEmpty())
+            throw new InstantiationException("Initialization failed: Station map cannot be empty. Terminating execution.");
+        this.stationMap = stationMapInit.getStationMap();
+
+        if (stationOrderMapInit == null || stationOrderMapInit.getStationOrder().isEmpty())
+            throw new InstantiationException("Initialization failed. Station order map cannot be empty. Terminating execution.");
+        this.stationTransitionMap = stationOrderMapInit.getStationOrder();
+
+        // It's now safe to check if the station order map consist of existing stations. If not, we exit.
+        if (!stationOrderCorrect())
+            throw new InstantiationException("Initialization failed. Station order map contains non-existant stations. Terminating execution.");
+
+        // Check if stations are correctly defined, meaning START, END and SERVICE
+        int start = 0;
+        int end = 0;
+        int service = 0;
+        for (Station station : this.stationMap.values()) {
+            if (station.getStationType() == StationType.START) {
+                this.startStationId = station.getId();
+                start++;
+            } else if (station.getStationType() == StationType.END) {
+                this.endStationId = station.getId();
+                end++;
+            } else if (station.getStationType() == StationType.SERVICE) {
+                this.serviceStationId = station.getId();
+                service++;
+            }
+        }
+
+        // We must have three stations
+        if (start == 0 || end == 0 || service == 0)
+            throw new InstantiationException("Initialization failed: production line must have one START, STOP and SERVICE station. Terminating execution.");
+
+        this.init = true;
     }
 
     public String getStartStationId() {
@@ -88,22 +102,6 @@ public class ProductionLine {
         this.serviceStationId = servicetStationId;
     }
 
-    public boolean addStation(Station station) {
-        if (station != null && !station.getId().isBlank() && !station.getId().isEmpty()) {
-            if (this.stationMap == null) {
-                this.stationMap = new HashMap<>();
-            }
-
-            // We only add of not existing
-            if (!this.stationMap.containsKey(station.getId())) {
-                this.stationMap.put(station.getId(), station);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public Station getStation(String stationId) {
         if (stationId == null || stationId.isEmpty() || stationId.isBlank()) {
             return null;
@@ -113,14 +111,18 @@ public class ProductionLine {
     }
 
     private String getNextStationId(String currentStationId) {
-        return this.stationOrder.get(currentStationId);
+        return this.stationTransitionMap.get(currentStationId);
     }
 
-    public LineItem startProduction(String id) {
+    public LineItem startProduction(String id) throws InstantiationException {
+        initCheck();
+
         return new LineItem(id, startStationId, null, State.START);
     }
 
-    public LineItem toNextStation(@NotNull LineItem actualItem, @NotNull LineItem currentLineItem) throws IllegalStateException {
+    public LineItem toNextStation(@NotNull LineItem actualItem, @NotNull LineItem currentLineItem) throws IllegalStateException, InstantiationException {
+        initCheck();
+
         State newState = currentLineItem.getState();
         Station currentStation = getStation(currentLineItem.getCurrentStationId());
 
@@ -136,7 +138,6 @@ public class ProductionLine {
             throw new IllegalStateException("This item should in the service station. This station is a '" + currentStation.getStationType() + "'.");
         }
 
-        //State currentState = currentLineItem.getState();
         LineItem lineItem = new LineItem(currentLineItem);
         switch (newState) {
             case RETRY:
@@ -186,9 +187,8 @@ public class ProductionLine {
         if (actualLineItem == null || currentItem == null || actualLineItem.getId() == null || currentItem.getCurrentStationId() == null)
             return false;
         else if (actualLineItem.isFailed())
-            return true;
+            return true;    // We do not check failed items.
 
-        // We do not check failed items.
-        return currentItem.getCurrentStationId().equals(this.stationOrder.get(actualLineItem.getCurrentStationId()));
+        return currentItem.getCurrentStationId().equals(this.stationTransitionMap.get(actualLineItem.getCurrentStationId()));
     }
 }

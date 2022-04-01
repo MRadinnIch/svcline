@@ -8,6 +8,9 @@ public class Station {
     private StationType stationType;
     private ArrayList<State> allowedStates;
 
+    public Station() {
+    }
+
     public Station(String id, String name, StationType stationType, ArrayList<State> allowedStates) {
         this.id = id;
         this.name = name;
