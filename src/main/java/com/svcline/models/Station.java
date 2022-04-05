@@ -8,18 +8,10 @@ public class Station {
     private String id;
     private String name;
     private StationType stationType;
-    //private ArrayList<State> allowedStates;
     private ArrayList<Action> allowedActions;
 
     public Station() {
     }
-
-    /*public Station(String id, String name, StationType stationType, ArrayList<State> allowedStates) {
-        this.id = id;
-        this.name = name;
-        this.stationType = stationType;
-        this.allowedStates = allowedStates;
-    }*/
 
     public Station(String id, String name, StationType stationType, ArrayList<Action> allowedActions) {
         this.id = id;
@@ -63,10 +55,6 @@ public class Station {
         return allowedStates;
     }
 
-/*    public void setAllowedStates(ArrayList<State> allowedStates) {
-        this.allowedStates = allowedStates;
-    }*/
-
     public ArrayList<Action> getAllowedActions() {
         return allowedActions;
     }
@@ -89,15 +77,6 @@ public class Station {
     public boolean isStartStation() {
         return this.stationType == StationType.START;
     }
-
-    /*public boolean allowedState(State stateToCompare) {
-        for (State state : allowedStates) {
-            if(state == stateToCompare)
-                return true;
-        }
-
-        return false;
-    }*/
 
     public boolean allowedState(State stateToCompare) {
         for (Action action : allowedActions) {
