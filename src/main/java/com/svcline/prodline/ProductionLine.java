@@ -4,7 +4,6 @@ import com.svcline.models.LineItem;
 import com.svcline.models.State;
 import com.svcline.models.Station;
 import com.svcline.models.StationType;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -136,7 +135,7 @@ public class ProductionLine {
         this.stationTransitionMap = stationTransitionMap;
     }
 
-    public LineItem toNextStation(@NotNull LineItem actualItem, @NotNull LineItem currentLineItem) throws IllegalStateException, InstantiationException {
+    public LineItem toNextStation(LineItem actualItem, LineItem currentLineItem) throws IllegalStateException, InstantiationException {
         initCheck();
 
         State newState = currentLineItem.getState();

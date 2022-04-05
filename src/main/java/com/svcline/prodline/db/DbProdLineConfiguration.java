@@ -13,10 +13,10 @@ public class DbProdLineConfiguration {
     private static final String COLLECTION = "productLineConfiguration";
     private static final String ITEM_ID = "demo-configuration";
 
-    public static void write(ProductLineConfiguration configuration) {
+    public static void write(String configId, ProductLineConfiguration configuration) {
         Firestore db = svcline.getFirestore();
 
-        db.collection(COLLECTION).document(ITEM_ID).set(configuration);
+        db.collection(COLLECTION).document(configId).set(configuration);
     }
 
     public static ProductLineConfiguration read(String id) {

@@ -33,16 +33,12 @@ public class ProductLineConfiguration {
         this.configuredStationOrder = configuredStationOrder;
     }
 
-    public void writeToDb(){
-        DbProdLineConfiguration.write(this);
+    public void writeToDb(String configId){
+        DbProdLineConfiguration.write(configId,this);
     }
 
-    public static ProductLineConfiguration loadFromDb(){
-        return DbProdLineConfiguration.read("demo-configuration");
-    }
-
-    public static ProductLineConfiguration loadFromDb(String id){
-        return DbProdLineConfiguration.read(id);
+    public static ProductLineConfiguration loadFromDb(String configId){
+        return DbProdLineConfiguration.read(configId);
     }
 
     public void loadTestConfiguration() {

@@ -7,8 +7,8 @@ import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
+import com.svcline.handlers.ConfigurationHandler;
 import com.svcline.handlers.LineHandler;
-import com.svcline.handlers.StationHandler;
 import com.svcline.models.Error;
 import com.svcline.models.LineResponse;
 import com.svcline.prodline.ProductLineConfiguration;
@@ -24,18 +24,22 @@ import java.nio.charset.StandardCharsets;
 public class svcline implements HttpFunction {
     private static Firestore firestore = null;
     private static ProductionLine productionLine = null;
-    private static final Gson gson = new Gson(); //GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+    private static final Gson gson = new Gson();
 
     private static final String CONTENT_TYPE = "application/json;charset=utf-8";
     private static final String SERVICE_ACCOUNT = "radinn-rindus-firebase-adminsdk-ha599-fbeceb59df.json";
     private static final String PROJECT_ID = "radinn-rindus";
 
+    private static final String PATH_CONFIGURATION = "/configurations/{configId}";
     private static final String PATH_JET_BODIES = "/jetbodies/config";
     private static final String PATH_PRODUCTION_LINE = "/items/{itemId}";
 
+    private static final String PRODUCT_CONFIGURATION1 = "test-1";
+    private static String currentlyLoadedConfiguration;
+
     // Register our path with handlers
     static {
-        Routler.register(PATH_JET_BODIES, new StationHandler());
+        Routler.register(PATH_CONFIGURATION, new ConfigurationHandler());
         Routler.register(PATH_PRODUCTION_LINE, new LineHandler());
     }
 
@@ -102,18 +106,22 @@ public class svcline implements HttpFunction {
     private void initProductionLine() throws InstantiationException {
         if (productionLine == null) {
             productionLine = new ProductionLine();
+            currentlyLoadedConfiguration = PRODUCT_CONFIGURATION1;
 
-            //ProductLineConfiguration productLineConfiguration = ProductLineConfiguration.loadFromDb();
-            ProductLineConfiguration productLineConfiguration = new  ProductLineConfiguration();
-            productLineConfiguration.loadTestConfiguration();
-            productLineConfiguration.writeToDb();
+            ProductLineConfiguration productLineConfiguration = ProductLineConfiguration.loadFromDb(currentlyLoadedConfiguration);
+            if(productLineConfiguration == null)
+                throw new InstantiationException("Failed to load configuration: " + currentlyLoadedConfiguration);
+
+            //ProductLineConfiguration productLineConfiguration = new  ProductLineConfiguration();
+            //productLineConfiguration.loadTestConfiguration();
+            //productLineConfiguration.writeToDb(PRODUCT_CONFIGURATION1);
 
             productionLine.init(productLineConfiguration.getConfiguredStationMap(), productLineConfiguration.getConfiguredStationOrder());
         }
     }
 
     public static void reloadProductionLineConfiguration() {
-        ProductLineConfiguration cfg = ProductLineConfiguration.loadFromDb("demo2-configuration");
+        ProductLineConfiguration cfg = ProductLineConfiguration.loadFromDb(currentlyLoadedConfiguration);
         try {
             productionLine.init(cfg.getConfiguredStationMap(), cfg.getConfiguredStationOrder());
             System.out.println("Production line setup:\n" + gson.toJson(cfg));
@@ -121,6 +129,8 @@ public class svcline implements HttpFunction {
             e.printStackTrace();
         }
     }
+
+
 
     public static ProductionLine getProductionLine() {
         return productionLine;
