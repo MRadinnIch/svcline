@@ -20,10 +20,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
+import java.util.Properties;
 
 public class svcline implements HttpFunction {
     private static Firestore firestore = null;
     private static ProductionLine productionLine = null;
+    private static Properties properties;
     private static final Gson gson = new Gson();
 
     private static final String CONTENT_TYPE = "application/json;charset=utf-8";
@@ -31,11 +33,9 @@ public class svcline implements HttpFunction {
     private static final String PROJECT_ID = "radinn-rindus";
 
     private static final String PATH_CONFIGURATION = "/configurations/{configId}";
-    private static final String PATH_JET_BODIES = "/jetbodies/config";
     private static final String PATH_PRODUCTION_LINE = "/items/{itemId}";
 
-    private static final String PRODUCT_CONFIGURATION1 = "test-1";
-    private static String currentlyLoadedConfiguration;
+    private static String currentlyLoadedConfiguration; // Loaded/read from application.properties
 
     // Register our path with handlers
     static {
@@ -58,6 +58,7 @@ public class svcline implements HttpFunction {
 
         // Since we can return the response, now we initiate the system and gracefully exit if it fails.
         try {
+            loadProperties();
             initFirestore();
             initProductionLine();
         } catch (InstantiationException | IOException e) {
@@ -106,15 +107,15 @@ public class svcline implements HttpFunction {
     private void initProductionLine() throws InstantiationException {
         if (productionLine == null) {
             productionLine = new ProductionLine();
-            currentlyLoadedConfiguration = PRODUCT_CONFIGURATION1;
+            //currentlyLoadedConfiguration = PRODUCT_CONFIGURATION1;
 
             ProductLineConfiguration productLineConfiguration = ProductLineConfiguration.loadFromDb(currentlyLoadedConfiguration);
             if(productLineConfiguration == null)
                 throw new InstantiationException("Failed to load configuration: " + currentlyLoadedConfiguration);
 
-            //ProductLineConfiguration productLineConfiguration = new  ProductLineConfiguration();
-            //productLineConfiguration.loadTestConfiguration();
-            //productLineConfiguration.writeToDb(PRODUCT_CONFIGURATION1);
+            /*ProductLineConfiguration productLineConfiguration = new  ProductLineConfiguration();
+            productLineConfiguration.loadTestConfiguration();
+            productLineConfiguration.writeToDb(currentlyLoadedConfiguration);*/
 
             productionLine.init(productLineConfiguration.getConfiguredStationMap(), productLineConfiguration.getConfiguredStationOrder());
         }
@@ -130,7 +131,17 @@ public class svcline implements HttpFunction {
         }
     }
 
+    private void loadProperties() throws IOException {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
 
+        InputStream resourceStream = loader.getResourceAsStream("application.properties");
+        properties = new Properties();
+        properties.load(resourceStream);
+
+        currentlyLoadedConfiguration = properties.getProperty("line.configuration");
+
+        System.out.println("currentlyLoadedConfiguration: " + currentlyLoadedConfiguration);
+    }
 
     public static ProductionLine getProductionLine() {
         return productionLine;

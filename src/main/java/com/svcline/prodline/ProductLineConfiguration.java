@@ -1,5 +1,6 @@
 package com.svcline.prodline;
 
+import com.svcline.models.Action;
 import com.svcline.models.State;
 import com.svcline.models.Station;
 import com.svcline.models.StationType;
@@ -42,33 +43,36 @@ public class ProductLineConfiguration {
     }
 
     public void loadTestConfiguration() {
+        Action pass = new Action("Next", State.PASS);
+        Action failed = new Action("Failed", State.FAIL);
+        Action retry = new Action("Retry", State.RETRY);
+        Action scrap = new Action("Scrap item", State.SCRAP);
+
         Station station1 = new Station("1001", "Start Station", StationType.START,
-                                       new ArrayList<>(List.of(State.PASS, State.FAIL)));
+                                       new ArrayList<>(List.of(pass, failed)));
 
         Station station2 = new Station("1002", "Second Station", StationType.PRODUCTION,
-                                       new ArrayList<>(List.of(State.PASS, State.FAIL)));
+                                       new ArrayList<>(List.of(pass, failed)));
 
         Station station3 = new Station("1003", "Third Station", StationType.PRODUCTION,
-                                       new ArrayList<>(List.of(State.PASS, State.FAIL)));
+                                       new ArrayList<>(List.of(pass, failed)));
 
         Station station4 = new Station("1004", "End Station", StationType.END,
-                                       new ArrayList<>(List.of(State.PASS, State.FAIL)));
+                                       new ArrayList<>(List.of(pass, failed)));
 
         //Station station5 = new Station("2005", "End Station", StationType.END,
         //                               new ArrayList<>(List.of(State.PASS, State.FAIL)));
 
         Station serviceStation = new Station("2001", "Service Station", StationType.SERVICE,
-                                             new ArrayList<>(List.of(State.PASS, State.RETRY, State.SCRAP)));
+                                             new ArrayList<>(List.of(pass, retry, scrap)));
         configuredStationMap.addStation(station1);
         configuredStationMap.addStation(station2);
         configuredStationMap.addStation(station3);
         configuredStationMap.addStation(station4);
-        //configuredStationMap.addStation(station5);
         configuredStationMap.addStation(serviceStation);
 
         configuredStationOrder.addStationTransition(station1.getId(), station2.getId());
         configuredStationOrder.addStationTransition(station2.getId(), station3.getId());
         configuredStationOrder.addStationTransition(station3.getId(), station4.getId());
-        //configuredStationOrder.addStationTransition(station4.getId(), station5.getId());
     }
 }
