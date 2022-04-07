@@ -3,7 +3,6 @@ package com.svcline.prodline.db;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
-import com.google.firebase.internal.NonNull;
 import com.svcline.prodline.ProductLineConfiguration;
 import com.svcline.svcline;
 

@@ -48,7 +48,16 @@ public class Transition {
         this.state = state;
     }
 
+    @Override
+    public String toString() {
+        return "Transition{" +
+               "id='" + id + '\'' +
+               ", currentStationId='" + currentStationId + '\'' +
+               ", state=" + state +
+               '}';
+    }
+
     public boolean validate() {
-        return !(this.id == null || this.currentStationId == null);
+        return !(this.id == null || this.currentStationId == null || this.state == null);
     }
 }

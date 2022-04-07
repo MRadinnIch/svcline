@@ -1,5 +1,7 @@
 package com.svcline.models;
 
+import com.google.gson.Gson;
+
 import java.net.HttpURLConnection;
 
 public class LineResponse {
@@ -11,14 +13,18 @@ public class LineResponse {
 
     }
 
-    public LineResponse(int code, String json) {
+    public LineResponse(int code, Object obj) {
+        Gson gson = new Gson();
+
         this.code = code;
-        this.json = json;
+        this.json = gson.toJson(obj);
     }
 
-    public LineResponse(String json) {
+    public LineResponse(Object obj) {
+        Gson gson = new Gson();
+
         this.code = HttpURLConnection.HTTP_OK;
-        this.json = json;
+        this.json = gson.toJson(obj);
     }
 
     public int getCode() {

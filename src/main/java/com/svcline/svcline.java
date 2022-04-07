@@ -25,7 +25,6 @@ import java.util.Properties;
 public class svcline implements HttpFunction {
     private static Firestore firestore = null;
     private static ProductionLine productionLine = null;
-    private static Properties properties;
     private static final Gson gson = new Gson();
 
     private static final String CONTENT_TYPE = "application/json;charset=utf-8";
@@ -35,6 +34,8 @@ public class svcline implements HttpFunction {
     private static final String PATH_CONFIGURATION = "/configurations/{configId}";
     private static final String PATH_PRODUCTION_LINE = "/items/{itemId}";
 
+    private static String buttonColorBg;
+    private static String buttonColorTxt;
     private static String currentlyLoadedConfiguration; // Loaded/read from application.properties
 
     // Register our path with handlers
@@ -110,7 +111,7 @@ public class svcline implements HttpFunction {
             //currentlyLoadedConfiguration = PRODUCT_CONFIGURATION1;
 
             ProductLineConfiguration productLineConfiguration = ProductLineConfiguration.loadFromDb(currentlyLoadedConfiguration);
-            if(productLineConfiguration == null)
+            if (productLineConfiguration == null)
                 throw new InstantiationException("Failed to load configuration: " + currentlyLoadedConfiguration);
 
             /*ProductLineConfiguration productLineConfiguration = new  ProductLineConfiguration();
@@ -135,12 +136,26 @@ public class svcline implements HttpFunction {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
 
         InputStream resourceStream = loader.getResourceAsStream("application.properties");
-        properties = new Properties();
+        Properties properties = new Properties();
         properties.load(resourceStream);
 
+        buttonColorBg = properties.getProperty("button.color.bg");
+        buttonColorTxt = properties.getProperty("button.color.txt");
         currentlyLoadedConfiguration = properties.getProperty("line.configuration");
 
         System.out.println("currentlyLoadedConfiguration: " + currentlyLoadedConfiguration);
+    }
+
+    public static String getButtonColorBg() {
+        return buttonColorBg;
+    }
+
+    public static String getButtonColorTxt() {
+        return buttonColorTxt;
+    }
+
+    public static String getCurrentlyLoadedConfiguration() {
+        return currentlyLoadedConfiguration;
     }
 
     public static ProductionLine getProductionLine() {

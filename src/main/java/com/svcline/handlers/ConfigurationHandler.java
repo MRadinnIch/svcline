@@ -2,10 +2,7 @@ package com.svcline.handlers;
 
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
-import com.google.gson.Gson;
-import com.svcline.handlers.db.DbLineFacacde;
 import com.svcline.models.Error;
-import com.svcline.models.LineItem;
 import com.svcline.models.LineResponse;
 import com.svcline.prodline.ProductLineConfiguration;
 import com.svcline.prodline.db.DbProdLineConfiguration;
@@ -16,7 +13,6 @@ import static java.net.HttpURLConnection.*;
 
 public class ConfigurationHandler implements Routeable {
     private static final String ITEM_ID = "{configId}";
-    private static final Gson gson = new Gson();
 
     @Override
     public LineResponse get(Route route, HttpRequest request, HttpResponse response) {
@@ -25,7 +21,7 @@ public class ConfigurationHandler implements Routeable {
         if (!route.isNaked()) {
             lineResponse = getFor(route.getPathVal(ITEM_ID));
         } else {
-            return new LineResponse(HTTP_BAD_REQUEST, gson.toJson(new Error("Provide config ID which you want.")));
+            return new LineResponse(HTTP_BAD_REQUEST, new Error("Provide config ID which you want."));
         }
 
         return lineResponse;
@@ -33,7 +29,7 @@ public class ConfigurationHandler implements Routeable {
 
     private LineResponse getFor(String itemId) {
         if (itemId == null || itemId.isBlank()) {
-            return new LineResponse(HTTP_BAD_REQUEST, gson.toJson(new Error("Error while looking up configuration due to miss-crafted id.")));
+            return new LineResponse(HTTP_BAD_REQUEST, new Error("Error while looking up configuration due to miss-crafted id."));
         }
 
         LineResponse lineResponse;
@@ -41,13 +37,13 @@ public class ConfigurationHandler implements Routeable {
             ProductLineConfiguration plc = DbProdLineConfiguration.read(itemId);
 
             if (plc != null) {
-                lineResponse = new LineResponse(gson.toJson(plc.getConfiguredStationMap()));
+                lineResponse = new LineResponse(plc.getConfiguredStationMap());
             } else {
-                lineResponse = new LineResponse(HTTP_NOT_FOUND, gson.toJson(new Error("Configuration not found for provided id: " + itemId)));
+                lineResponse = new LineResponse(HTTP_NOT_FOUND, new Error("Configuration not found for provided id: " + itemId));
             }
         } catch (Exception e) {
             e.printStackTrace();
-            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, gson.toJson(new Error(e.getMessage())));
+            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, new Error(e.getMessage()));
         }
 
         return lineResponse;

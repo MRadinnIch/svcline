@@ -1,27 +1,15 @@
 package com.svcline.models;
 
 import com.google.cloud.firestore.annotation.Exclude;
-import com.google.cloud.functions.HttpRequest;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.svcline.prodline.Transition;
 
-import java.io.IOException;
-
 public class LineItem extends Transition {
-    private static final Gson gson = new Gson();
-
-    //private String id;
-    //private String currentStationId;
     private String previousStationId;
-    //private State state;
 
     public LineItem() {
     }
 
-    public LineItem(Transition tr) throws IOException {
-        //Transition li = ;
-
+    public LineItem(Transition tr) {
         this.id = tr.getId();
         this.currentStationId = tr.getCurrentStationId();
         this.previousStationId = null;

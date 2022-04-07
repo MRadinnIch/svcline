@@ -2,10 +2,13 @@ package com.svcline.routler;
 
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
+import com.svcline.models.Error;
 import com.svcline.models.LineResponse;
 
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
+
+import static java.net.HttpURLConnection.HTTP_NOT_IMPLEMENTED;
 
 // Route handler
 public class Routler {
@@ -69,6 +72,6 @@ public class Routler {
             }
         }
 
-        return new LineResponse(HttpURLConnection.HTTP_NOT_IMPLEMENTED, "{\"method\" : \"" + request.getMethod() + "\", \"status\" : \"Not implemented\"}");
+        return new LineResponse(HTTP_NOT_IMPLEMENTED, new Error("method '" + request.getMethod() + "' not implemented."));
     }
 }

@@ -1,9 +1,8 @@
 package com.svcline.models;
 
-public class Action {
-    private static final String COLOR_BG = "0xFF0000FF";
-    private static final String COLOR_TXT = "0xFF000000";
+import com.svcline.svcline;
 
+public class Action {
     private String text;
     private String bgColor;
     private String textColor;
@@ -15,8 +14,8 @@ public class Action {
     public Action(String text, State state) {
         this.text = text;
         this.state = state;
-        this.bgColor = COLOR_BG;
-        this.textColor = COLOR_TXT;
+        this.bgColor = svcline.getButtonColorBg();
+        this.textColor = svcline.getButtonColorTxt();
     }
 
     public String getText() {

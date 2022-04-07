@@ -1,12 +1,5 @@
 package com.svcline.handlers;
 
-import com.svcline.prodline.ProductionLine;
-import com.svcline.routler.Route;
-import com.svcline.routler.Routeable;
-import com.svcline.models.Error;
-import com.svcline.models.LineResponse;
-import com.svcline.svcline;
-import com.svcline.models.Unit;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
@@ -15,6 +8,12 @@ import com.google.cloud.firestore.QuerySnapshot;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
+import com.svcline.models.Error;
+import com.svcline.models.LineResponse;
+import com.svcline.models.Unit;
+import com.svcline.routler.Route;
+import com.svcline.routler.Routeable;
+import com.svcline.svcline;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,10 +39,10 @@ public class StationHandler implements Routeable {
                 units.add(document.toObject(Unit.class));
             }
 
-            lineResponse = new LineResponse(gson.toJson(units));
+            lineResponse = new LineResponse(units);
         } catch (Exception e) {
             e.printStackTrace();
-            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, gson.toJson(new Error(e.getMessage())));
+            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, new Error(e.getMessage()));
         }
 
         return lineResponse;
@@ -51,7 +50,7 @@ public class StationHandler implements Routeable {
 
     private LineResponse getFor(String jbId) {
         if (jbId == null || jbId.isBlank()) {
-            return new LineResponse(HTTP_BAD_REQUEST, gson.toJson(new Error("Error while looking up unit due to miss-crafted id.")));
+            return new LineResponse(HTTP_BAD_REQUEST, new Error("Error while looking up unit due to miss-crafted id."));
         }
 
         LineResponse lineResponse;
@@ -63,10 +62,10 @@ public class StationHandler implements Routeable {
             DocumentSnapshot document = query.get();
             Unit unit = document.toObject(Unit.class);
 
-            lineResponse = new LineResponse(gson.toJson(unit));
+            lineResponse = new LineResponse(unit);
         } catch (Exception e) {
             e.printStackTrace();
-            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, gson.toJson(new Error(e.getMessage())));
+            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, new Error(e.getMessage()));
         }
 
         return lineResponse;
@@ -88,7 +87,7 @@ public class StationHandler implements Routeable {
     public LineResponse put(Route route, HttpRequest request, HttpResponse response) {
         String jbId = route.getPathVal("{jbId}");
         if (jbId == null || jbId.isBlank()) {
-            return new LineResponse(HTTP_BAD_REQUEST, gson.toJson(new Error("Error while PUT due to miss-crafted id.")));
+            return new LineResponse(HTTP_BAD_REQUEST, new Error("Error while PUT due to miss-crafted id."));
         }
 
         LineResponse lineResponse;
@@ -99,13 +98,13 @@ public class StationHandler implements Routeable {
             if (unit.validate() && unit.getJbId().equalsIgnoreCase(jbId)) {
                 db.collection(COLLECTION).document(jbId).set(unit);
 
-                lineResponse = new LineResponse(gson.toJson(unit));
+                lineResponse = new LineResponse(unit);
             } else {
-                lineResponse = new LineResponse(HTTP_BAD_REQUEST, gson.toJson(new Error("Failed to PUT for id " + jbId)));
+                lineResponse = new LineResponse(HTTP_BAD_REQUEST, new Error("Failed to PUT for id " + jbId));
             }
         } catch (Exception e) {
             e.printStackTrace();
-            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, gson.toJson(new Error(e.getMessage())));
+            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, new Error(e.getMessage()));
         }
 
         return lineResponse;
@@ -114,7 +113,7 @@ public class StationHandler implements Routeable {
     @Override
     public LineResponse patch(Route route, HttpRequest request, HttpResponse response) {
         svcline.reloadProductionLineConfiguration();
-        return new LineResponse(HTTP_ACCEPTED, gson.toJson(new Error("Production line configuration reloaded")));
+        return new LineResponse(HTTP_ACCEPTED, new Error("Production line configuration reloaded"));
     }
 
     @Override
@@ -125,18 +124,17 @@ public class StationHandler implements Routeable {
             Firestore db = svcline.getFirestore();
 
             Unit unit = gson.fromJson(request.getReader(), Unit.class);
-            if(!unit.validate()) {
-                lineResponse = new LineResponse(HTTP_NOT_ACCEPTABLE, gson.toJson(new Error("Failed to validate input object " + unit)));
-            }
-            else if (getFor(unit.getJbId()) != null) {
-                lineResponse = new LineResponse(HTTP_CONFLICT, gson.toJson(new Error("Failed to create existing object " + unit)));
+            if (!unit.validate()) {
+                lineResponse = new LineResponse(HTTP_NOT_ACCEPTABLE, new Error("Failed to validate input object " + unit));
+            } else if (getFor(unit.getJbId()) != null) {
+                lineResponse = new LineResponse(HTTP_CONFLICT, new Error("Failed to create existing object " + unit));
             } else {    // Validations passed, create document
                 db.collection(COLLECTION).document(unit.getJbId()).set(unit);
-                lineResponse = new LineResponse(HTTP_CREATED, gson.toJson(unit));
+                lineResponse = new LineResponse(HTTP_CREATED, unit);
             }
         } catch (Exception e) {
             e.printStackTrace();
-            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, gson.toJson(new Error(e.getMessage())));
+            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, new Error(e.getMessage()));
         }
 
         return lineResponse;
@@ -145,7 +143,7 @@ public class StationHandler implements Routeable {
 
     @Override
     public LineResponse delete(Route route, HttpRequest request, HttpResponse response) {
-        return new LineResponse(HTTP_NOT_FOUND, gson.toJson(new Error("DELETE not implemented yet!")));
+        return new LineResponse(HTTP_NOT_FOUND, new Error("DELETE not implemented yet!"));
     }
 }
 
