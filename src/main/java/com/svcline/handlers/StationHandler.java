@@ -20,8 +20,8 @@ import java.util.List;
 
 import static java.net.HttpURLConnection.*;
 
-public class StationHandler implements Routeable {
-    private static final String COLLECTION = "units";
+public abstract class StationHandler implements Routeable {}
+    /*private static final String COLLECTION = "units";
     private static final Gson gson = new Gson();
 
     private LineResponse getAll() {

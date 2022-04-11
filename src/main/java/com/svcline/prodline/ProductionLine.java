@@ -1,28 +1,38 @@
 package com.svcline.prodline;
 
-import com.svcline.models.LineItem;
-import com.svcline.models.State;
-import com.svcline.models.Station;
-import com.svcline.models.StationType;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.FirestoreOptions;
+import com.svcline.models.*;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ProductionLine {
+    private static final String SERVICE_ACCOUNT = "radinn-rindus-firebase-adminsdk-ha599-fbeceb59df.json";
+    private static final String PROJECT_ID = "radinn-rindus";
+
     private String startStationId;
     private String endStationId;
     private String serviceStationId;
     private HashMap<String, Station> stationMap;
     private HashMap<String, String> stationTransitionMap;
 
+    private static Firestore firestore = null;
+    private Props props;
+    private ProductLineConfiguration productLineConfiguration;
+
     private boolean init = false;
 
-    public ProductionLine() {
+    public ProductionLine() throws IOException {
         this.stationMap = null;
         this.startStationId = null;
         this.serviceStationId = null;
         this.endStationId = null;
         this.stationTransitionMap = null;
+        initFirestore();
     }
 
     private void initCheck() throws InstantiationException {
@@ -39,14 +49,29 @@ public class ProductionLine {
         return true;
     }
 
-    public void init(StationMap stationMapInit, StationOrderMap stationOrderMapInit) throws InstantiationException {
+    public ProductLineConfiguration getProductLineConfiguration() {
+        return productLineConfiguration;
+    }
+
+    public void setProductLineConfiguration(ProductLineConfiguration productLineConfiguration) {
+        this.productLineConfiguration = productLineConfiguration;
+    }
+
+    public void init(ProductLineConfiguration plc, Props props) throws InstantiationException, IOException {
         // We must have three stations
+        if (plc == null)
+            throw new InstantiationException("Initialization failed: Provided configuration cannot be null. Terminating execution.");
+        this.productLineConfiguration = plc;
+
+        StationMap stationMapInit = plc.getConfiguredStationMap();
+        StationOrderMap stationOrderMapInit = plc.getConfiguredStationOrder();
+
         if (stationMapInit == null || stationMapInit.getStationMap().isEmpty())
             throw new InstantiationException("Initialization failed: Station map cannot be empty. Terminating execution.");
         this.stationMap = stationMapInit.getStationMap();
 
         if (stationOrderMapInit == null || stationOrderMapInit.getStationOrder().isEmpty())
-            throw new InstantiationException("Initialization failed. Station order map cannot be empty. Terminating execution.");
+            throw new InstantiationException("Initialization failed: Station order map cannot be empty. Terminating execution.");
         this.stationTransitionMap = stationOrderMapInit.getStationOrder();
 
         // It's now safe to check if the station order map consist of existing stations. If not, we exit.
@@ -74,6 +99,7 @@ public class ProductionLine {
         if (start == 0 || end == 0 || service == 0)
             throw new InstantiationException("Initialization failed: production line must have one START, STOP and SERVICE station. Terminating execution.");
 
+        this.props = props;
         this.init = true;
     }
 
@@ -135,6 +161,33 @@ public class ProductionLine {
         this.stationTransitionMap = stationTransitionMap;
     }
 
+    public Props getProps() {
+        return props;
+    }
+
+    public void setProps(Props props) {
+        this.props = props;
+    }
+
+    private void initFirestore() throws IOException {
+        if (firestore == null) {
+            InputStream serviceAccount = getClass().getClassLoader().getResourceAsStream(SERVICE_ACCOUNT);
+
+            assert serviceAccount != null;
+            FirestoreOptions firestoreOptions =
+                    FirestoreOptions.getDefaultInstance().toBuilder()
+                            .setProjectId(PROJECT_ID)
+                            .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                            .build();
+
+            firestore = firestoreOptions.getService();
+        }
+    }
+
+    public Firestore getFirestore() {
+        return firestore;
+    }
+
     public LineItem toNextStation(LineItem actualItem, LineItem currentLineItem) throws IllegalStateException, InstantiationException {
         initCheck();
 
@@ -149,9 +202,9 @@ public class ProductionLine {
         } else if (actualItem.isDone()) {
             throw new IllegalStateException("Finished items cannot be processed");
         } else if (!currentStation.allowedState(newState)) {
-            throw new IllegalStateException("State '" + newState + "' not allowed for station. Allowed states are: " + currentStation.getAllowedStates());
+            throw new IllegalStateException("State " + newState + " not allowed for station. Allowed states are: " + currentStation.getAllowedStates());
         } else if (actualItem.isFailed() && !currentStation.isServiceStation()) {
-            throw new IllegalStateException("This item should in the service station. This station is a '" + currentStation.getStationType() + "'.");
+            throw new IllegalStateException("This item should in the service station. This station is a " + currentStation.getStationType() + ".");
         }
 
         LineItem lineItem = new LineItem(currentLineItem);
@@ -166,7 +219,11 @@ public class ProductionLine {
                 if (currentStation.isEndStation()) {
                     lineItem.setState(State.DONE);
                     lineItem.setCurrentStationId(this.endStationId);
-                } else {
+                } else if(currentStation.isServiceStation()) {
+                    lineItem.setState(newState);
+                    lineItem.setCurrentStationId(actualItem.getPreviousStationId());
+                }
+                else {
                     lineItem.setState(newState);
                     //lineItem.setCurrentStationId(...); We do not set current station ID since the one passed in is correct
                 }
@@ -202,8 +259,8 @@ public class ProductionLine {
     private boolean isInCorrectLineOrder(LineItem actualLineItem, LineItem currentItem) {
         if (actualLineItem == null || currentItem == null || actualLineItem.getId() == null || currentItem.getCurrentStationId() == null)
             return false;
-        else if (actualLineItem.isFailed())
-            return true;    // We do not check failed items.
+        else if (actualLineItem.isFailed() || actualLineItem.isScrapped())
+            return true;    // We do not check failed or scrapped items.
 
         return currentItem.getCurrentStationId().equals(this.stationTransitionMap.get(actualLineItem.getCurrentStationId()));
     }

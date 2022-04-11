@@ -26,4 +26,11 @@ public class StationMap {
     public boolean registered(String k) {
         return stationMap.containsKey(k);
     }
+
+    @Override
+    public String toString() {
+        return "StationMap{" +
+               "stationMap=" + stationMap +
+               '}';
+    }
 }

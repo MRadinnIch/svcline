@@ -4,7 +4,6 @@ import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.svcline.prodline.ProductLineConfiguration;
-import com.svcline.svcline;
 
 import java.util.concurrent.ExecutionException;
 
@@ -12,19 +11,22 @@ public class DbProdLineConfiguration {
     private static final String COLLECTION = "productLineConfiguration";
     private static final String ITEM_ID = "demo-configuration";
 
-    public static void write(String configId, ProductLineConfiguration configuration) {
-        Firestore db = svcline.getFirestore();
+    private Firestore db;
 
+    public DbProdLineConfiguration(Firestore firestore) {
+        db = firestore;
+    }
+
+    public void write(String configId, ProductLineConfiguration configuration) {
         db.collection(COLLECTION).document(configId).set(configuration);
     }
 
-    public static ProductLineConfiguration read(String id) {
-        Firestore db = svcline.getFirestore();
-
+    public ProductLineConfiguration read(String id) {
         ApiFuture<DocumentSnapshot> query = db.collection(COLLECTION).document(id).get();
         try {
             DocumentSnapshot document = query.get();
-            return document.toObject(ProductLineConfiguration.class);
+            ProductLineConfiguration plc = document.toObject(ProductLineConfiguration.class);
+            return plc;
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
             return null;

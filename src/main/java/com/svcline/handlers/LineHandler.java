@@ -4,6 +4,7 @@ import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
 import com.svcline.LineService;
+import com.svcline.models.Context;
 import com.svcline.models.Error;
 import com.svcline.models.LineResponse;
 import com.svcline.prodline.Transition;
@@ -11,6 +12,7 @@ import com.svcline.routler.Route;
 import com.svcline.routler.Routeable;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_NOT_IMPLEMENTED;
@@ -18,6 +20,12 @@ import static java.net.HttpURLConnection.HTTP_NOT_IMPLEMENTED;
 public class LineHandler implements Routeable {
     private static final String ITEM_ID = "{itemId}";
     private static final Gson gson = new Gson();
+    private Context context;
+
+    @Override
+    public void setContext(Context context) {
+        this.context = context;
+    }
 
     @Override
     public LineResponse get(Route route, HttpRequest request, HttpResponse response) {
@@ -48,12 +56,36 @@ public class LineHandler implements Routeable {
             return new LineResponse(HTTP_BAD_REQUEST, new Error("Unexpected error while updating item. Please try again."));
         }
 
-        return LineService.put(transition);
+        LineService lineService = new LineService(context.getProductionLine());
+        return lineService.toNext(transition);
     }
 
     @Override
     public LineResponse patch(Route route, HttpRequest request, HttpResponse response) {
-        return new LineResponse(HTTP_NOT_IMPLEMENTED, new Error("PUT method not implemented"));
+        String itemId = route.getPathVal(ITEM_ID);
+        if (itemId == null || itemId.isBlank()) {
+            return new LineResponse(HTTP_BAD_REQUEST, new Error("Error while updating item due to miss-crafted id."));
+        }
+
+        Transition transition;
+
+        try {
+            transition = gson.fromJson(request.getReader(), Transition.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new LineResponse(HTTP_BAD_REQUEST, new Error("Unexpected error while updating item. Please try again."));
+        }
+
+        LineService lineService = new LineService(context.getProductionLine());
+
+        try {
+            lineService.prepareItem(transition);
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+            return new LineResponse(HTTP_BAD_REQUEST, new Error("Item not prepared for processing please prepare."));
+        }
+
+        return new LineResponse("Item prepared for production.");
     }
 
     @Override
@@ -67,7 +99,8 @@ public class LineHandler implements Routeable {
             return new LineResponse(HTTP_BAD_REQUEST, new Error("Unexpected error while creating item. Please try again."));
         }
 
-        return LineService.create(transition);
+        LineService lineService = new LineService(context.getProductionLine());
+        return lineService.create(transition);
     }
 
     @Override
@@ -80,10 +113,12 @@ public class LineHandler implements Routeable {
             return new LineResponse(HTTP_BAD_REQUEST, new Error("Error while looking up unit due to miss-crafted id."));
         }
 
-        return LineService.getItem(itemId);
+        LineService lineService = new LineService(context.getProductionLine());
+        return lineService.getItem(itemId);
     }
 
     private LineResponse getAll() {
-        return LineService.getAllItems();
+        LineService lineService = new LineService(context.getProductionLine());
+        return lineService.getAllItems();
     }
 }

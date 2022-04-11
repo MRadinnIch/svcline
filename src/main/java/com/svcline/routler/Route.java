@@ -2,6 +2,7 @@ package com.svcline.routler;
 
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
+import com.svcline.models.Context;
 import com.svcline.models.LineResponse;
 
 import java.util.ArrayList;
@@ -42,7 +43,9 @@ public class Route {
         return pairs;
     }
 
-    public LineResponse execute(Route route, HttpRequest request, HttpResponse response) {
+    public LineResponse execute(Route route, HttpRequest request, HttpResponse response, Context context) {
+        handler.setContext(context);
+
         switch (request.getMethod()) {
             case "GET":
                 return handler.get(route, request, response);
@@ -94,7 +97,7 @@ public class Route {
                 match++;
 
                 //
-                if(!regPair.getV().isEmpty() && !inPair.getV().isEmpty())
+                if (!regPair.getV().isEmpty() && !inPair.getV().isEmpty())
                     this.vMap.put(regPair.getV(), inPair.getV());
             }
         }
@@ -105,8 +108,8 @@ public class Route {
         return i == match;
     }
 
-    public String getRouteValue(String vPath){
-        if(vPath == null || vPath.isEmpty() || vPath.isBlank() || this.vMap == null)
+    public String getRouteValue(String vPath) {
+        if (vPath == null || vPath.isEmpty() || vPath.isBlank() || this.vMap == null)
             return null;
 
         return this.vMap.get(vPath);

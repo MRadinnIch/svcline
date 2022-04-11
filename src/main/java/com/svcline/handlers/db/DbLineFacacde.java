@@ -2,42 +2,50 @@ package com.svcline.handlers.db;
 
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
-import com.google.firebase.internal.NonNull;
 import com.svcline.models.LineItem;
-import com.svcline.svcline;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class DbLineFacacde {
-    private static final String COLLECTION = "lineItem";
+    private static final String COLLECTION_LIVE = "lineItem";
+    private static final String COLLECTION_TEST = "lineItemTest";
 
-    public static void set(LineItem lineItem) {
-        Firestore db = svcline.getFirestore();
+    private static String activeCollection;
+    private static Firestore db;
 
-        db.collection(COLLECTION).document(lineItem.getId()).set(lineItem);
+    public DbLineFacacde(Firestore firestore, Boolean liveEnvironment) {
+        db = firestore;
+        activeCollection = liveEnvironment ? COLLECTION_LIVE : COLLECTION_TEST;
     }
 
-    public static LineItem getFor(@NonNull String itemId) throws ExecutionException, InterruptedException {
-        Firestore db = svcline.getFirestore();
+    public void set(LineItem lineItem) throws ExecutionException, InterruptedException {
+        ApiFuture<WriteResult> wr = db.collection(activeCollection).document(lineItem.getId()).set(lineItem);
 
-        ApiFuture<DocumentSnapshot> query = db.collection(COLLECTION).document(itemId).get();
+        //noinspection StatementWithEmptyBody
+        while (!wr.isDone()) { /* We lock the thread waiting for the Firestore operation to be done. using callbacks does not help  */ }
+
+        // We get the result. If this throws an exception the "set" failed.
+        //noinspection ResultOfMethodCallIgnored
+        wr.get().getUpdateTime();
+    }
+
+    public LineItem getFor(String itemId) throws ExecutionException, InterruptedException {
+        ApiFuture<DocumentSnapshot> query = db.collection(activeCollection).document(itemId).get();
         DocumentSnapshot document = query.get();
 
         return document.exists() ? document.toObject(LineItem.class) : null;
     }
 
-    public static ArrayList<LineItem> getAll() throws ExecutionException, InterruptedException {
-        Firestore db = svcline.getFirestore();
-
-        ApiFuture<QuerySnapshot> query = db.collection(COLLECTION).get();
+    public ArrayList<LineItem> getAll() throws ExecutionException, InterruptedException {
+        ApiFuture<QuerySnapshot> query = db.collection(activeCollection).get();
 
         QuerySnapshot querySnapshot = query.get();
         List<QueryDocumentSnapshot> documents = querySnapshot.getDocuments();
         ArrayList<LineItem> lineItems = new ArrayList<>();
 
-        if(documents.isEmpty())
+        if (documents.isEmpty())
             return null;
 
         for (QueryDocumentSnapshot document : documents) {

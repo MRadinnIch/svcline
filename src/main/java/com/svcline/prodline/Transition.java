@@ -16,12 +16,22 @@ public class Transition {
     public Transition() {
     }
 
+    public Transition(String id) {
+        this.id = id;
+    }
+
     public Transition(HttpRequest request) throws IOException {
         Transition transition = gson.fromJson(request.getReader(), Transition.class);
 
         this.id = transition.id;
         this.currentStationId = transition.currentStationId;
         this.state = transition.state;
+    }
+
+    public Transition(String id, String currentStationId, State state) {
+        this.id = id;
+        this.currentStationId = currentStationId;
+        this.state = state;
     }
 
     public String getId() {

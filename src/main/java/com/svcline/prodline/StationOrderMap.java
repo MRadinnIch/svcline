@@ -20,4 +20,11 @@ public class StationOrderMap {
     public void setStationOrder(HashMap<String, String> stationOrder) {
         this.stationOrder = stationOrder;
     }
+
+    @Override
+    public String toString() {
+        return "StationOrderMap{" +
+               "stationOrder=" + stationOrder +
+               '}';
+    }
 }

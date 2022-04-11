@@ -1,42 +1,32 @@
 package com.svcline;
 
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.firestore.Firestore;
-import com.google.cloud.firestore.FirestoreOptions;
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
 import com.svcline.handlers.ConfigurationHandler;
 import com.svcline.handlers.LineHandler;
+import com.svcline.models.Context;
 import com.svcline.models.Error;
 import com.svcline.models.LineResponse;
+import com.svcline.models.Props;
 import com.svcline.prodline.ProductLineConfiguration;
 import com.svcline.prodline.ProductionLine;
 import com.svcline.routler.Routler;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
-import java.util.Properties;
 
 public class svcline implements HttpFunction {
-    private static Firestore firestore = null;
     private static ProductionLine productionLine = null;
     private static final Gson gson = new Gson();
 
     private static final String CONTENT_TYPE = "application/json;charset=utf-8";
-    private static final String SERVICE_ACCOUNT = "radinn-rindus-firebase-adminsdk-ha599-fbeceb59df.json";
-    private static final String PROJECT_ID = "radinn-rindus";
 
     private static final String PATH_CONFIGURATION = "/configurations/{configId}";
     private static final String PATH_PRODUCTION_LINE = "/items/{itemId}";
-
-    private static String buttonColorBg;
-    private static String buttonColorTxt;
-    private static String currentlyLoadedConfiguration; // Loaded/read from application.properties
 
     // Register our path with handlers
     static {
@@ -59,8 +49,6 @@ public class svcline implements HttpFunction {
 
         // Since we can return the response, now we initiate the system and gracefully exit if it fails.
         try {
-            loadProperties();
-            initFirestore();
             initProductionLine();
         } catch (InstantiationException | IOException e) {
             e.printStackTrace();
@@ -73,8 +61,9 @@ public class svcline implements HttpFunction {
             return;
         }
 
+        Context context = new Context(productionLine);
         // We came so far, now handle the request
-        LineResponse lineResponse = Routler.handle(request, response);
+        LineResponse lineResponse = Routler.handle(request, response, context);
 
         // Attempt returning the actual response
         try {
@@ -90,80 +79,57 @@ public class svcline implements HttpFunction {
         }
     }
 
-    private void initFirestore() throws IOException {
-        if (firestore == null) {
-            InputStream serviceAccount = getClass().getClassLoader().getResourceAsStream(SERVICE_ACCOUNT);
-
-            assert serviceAccount != null;
-            FirestoreOptions firestoreOptions =
-                    FirestoreOptions.getDefaultInstance().toBuilder()
-                            .setProjectId(PROJECT_ID)
-                            .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                            .build();
-
-            firestore = firestoreOptions.getService();
-        }
-    }
-
-    private void initProductionLine() throws InstantiationException {
+    private void initProductionLine() throws InstantiationException, IOException {
         if (productionLine == null) {
             productionLine = new ProductionLine();
+            Props props = new Props();
             //currentlyLoadedConfiguration = PRODUCT_CONFIGURATION1;
 
-            ProductLineConfiguration productLineConfiguration = ProductLineConfiguration.loadFromDb(currentlyLoadedConfiguration);
-            if (productLineConfiguration == null)
-                throw new InstantiationException("Failed to load configuration: " + currentlyLoadedConfiguration);
+            ProductLineConfiguration productLineConfiguration = new ProductLineConfiguration(productionLine.getFirestore());
+            productLineConfiguration.loadFromDb(props.getCurrentlyLoadedConfiguration());
 
             /*ProductLineConfiguration productLineConfiguration = new  ProductLineConfiguration();
             productLineConfiguration.loadTestConfiguration();
             productLineConfiguration.writeToDb(currentlyLoadedConfiguration);*/
 
-            productionLine.init(productLineConfiguration.getConfiguredStationMap(), productLineConfiguration.getConfiguredStationOrder());
+            productionLine.init(productLineConfiguration, props);
         }
     }
 
     public static void reloadProductionLineConfiguration() {
-        ProductLineConfiguration cfg = ProductLineConfiguration.loadFromDb(currentlyLoadedConfiguration);
+        ProductLineConfiguration cfg;
         try {
-            productionLine.init(cfg.getConfiguredStationMap(), cfg.getConfiguredStationOrder());
+            cfg = new ProductLineConfiguration(productionLine.getFirestore());
+            cfg.loadFromDb(productionLine.getProps().getCurrentlyLoadedConfiguration());
+
+            productionLine.init(cfg, productionLine.getProps());
             System.out.println("Production line setup:\n" + gson.toJson(cfg));
-        } catch (InstantiationException e) {
+        } catch (InstantiationException | IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void loadProperties() throws IOException {
+    /*private Props loadProperties() throws IOException {
+        Props props = new Props();
+
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
 
         InputStream resourceStream = loader.getResourceAsStream("application.properties");
         Properties properties = new Properties();
         properties.load(resourceStream);
 
-        buttonColorBg = properties.getProperty("button.color.bg");
-        buttonColorTxt = properties.getProperty("button.color.txt");
-        currentlyLoadedConfiguration = properties.getProperty("line.configuration");
+        props.setButtonColorBg(properties.getProperty("button.color.bg"));
+        props.setButtonColorTxt(properties.getProperty("button.color.txt"));
+        props.setCurrentlyLoadedConfiguration(properties.getProperty("line.configuration"));
+        props.setEnvironment(properties.getProperty("environment"));
 
-        System.out.println("currentlyLoadedConfiguration: " + currentlyLoadedConfiguration);
-    }
+        System.out.println("Props: " + props);
 
-    public static String getButtonColorBg() {
-        return buttonColorBg;
-    }
-
-    public static String getButtonColorTxt() {
-        return buttonColorTxt;
-    }
-
-    public static String getCurrentlyLoadedConfiguration() {
-        return currentlyLoadedConfiguration;
-    }
+        return props;
+    }*/
 
     public static ProductionLine getProductionLine() {
         return productionLine;
-    }
-
-    public static Firestore getFirestore() {
-        return firestore;
     }
 
     private static byte[] bytes(String str) {

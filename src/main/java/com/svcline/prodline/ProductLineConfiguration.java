@@ -1,21 +1,40 @@
 package com.svcline.prodline;
 
+import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.annotation.Exclude;
 import com.svcline.models.Action;
 import com.svcline.models.State;
 import com.svcline.models.Station;
 import com.svcline.models.StationType;
 import com.svcline.prodline.db.DbProdLineConfiguration;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ProductLineConfiguration {
-    StationMap configuredStationMap;
-    StationOrderMap configuredStationOrder;
+    private String version;
+    private StationMap configuredStationMap;
+    private StationOrderMap configuredStationOrder;
+
+    @Exclude
+    private Firestore firestore;
 
     public ProductLineConfiguration() {
-        configuredStationMap = new StationMap();
-        configuredStationOrder = new StationOrderMap();
+    }
+
+    public ProductLineConfiguration(Firestore firestore) throws IOException {
+        this.configuredStationMap = new StationMap();
+        this.configuredStationOrder = new StationOrderMap();
+        this.firestore = firestore;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public StationMap getConfiguredStationMap() {
@@ -34,12 +53,17 @@ public class ProductLineConfiguration {
         this.configuredStationOrder = configuredStationOrder;
     }
 
-    public void writeToDb(String configId){
-        DbProdLineConfiguration.write(configId,this);
+    public void writeToDb(String configId) {
+        DbProdLineConfiguration prodLineConfiguration = new DbProdLineConfiguration(firestore);
+        prodLineConfiguration.write(configId, this);
     }
 
-    public static ProductLineConfiguration loadFromDb(String configId){
-        return DbProdLineConfiguration.read(configId);
+    public void loadFromDb(String configId) {
+        DbProdLineConfiguration prodLineConfiguration = new DbProdLineConfiguration(firestore);
+        ProductLineConfiguration plc = prodLineConfiguration.read(configId);
+
+        this.configuredStationMap = plc.configuredStationMap;
+        this.configuredStationOrder = plc.getConfiguredStationOrder();
     }
 
     public void loadTestConfiguration() {
@@ -74,5 +98,14 @@ public class ProductLineConfiguration {
         configuredStationOrder.addStationTransition(station1.getId(), station2.getId());
         configuredStationOrder.addStationTransition(station2.getId(), station3.getId());
         configuredStationOrder.addStationTransition(station3.getId(), station4.getId());
+    }
+
+    @Override
+    public String toString() {
+        return "ProductLineConfiguration{" +
+               "version='" + version + '\'' +
+               ", configuredStationMap=" + configuredStationMap +
+               ", configuredStationOrder=" + configuredStationOrder +
+               '}';
     }
 }

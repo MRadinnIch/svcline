@@ -14,8 +14,8 @@ public class Action {
     public Action(String text, State state) {
         this.text = text;
         this.state = state;
-        this.bgColor = svcline.getButtonColorBg();
-        this.textColor = svcline.getButtonColorTxt();
+        //this.bgColor = svcline.getProps().getButtonColorBg();
+        //this.textColor = svcline.getProps().getButtonColorTxt();
     }
 
     public String getText() {

@@ -2,10 +2,10 @@ package com.svcline.routler;
 
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
+import com.svcline.models.Context;
 import com.svcline.models.Error;
 import com.svcline.models.LineResponse;
 
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 
 import static java.net.HttpURLConnection.HTTP_NOT_IMPLEMENTED;
@@ -64,11 +64,11 @@ public class Routler {
         System.out.println("\n");
     }
 
-    public static LineResponse handle(HttpRequest request, HttpResponse response) {
+    public static LineResponse handle(HttpRequest request, HttpResponse response, Context context) {
         for (Route route : routes) {
             // If we've found our route, and it can be executed. Execute!
             if (route.equalsTo(request.getPath())) {
-                return route.execute(route, request, response);
+                return route.execute(route, request, response, context);
             }
         }
 

@@ -2,6 +2,7 @@ package com.svcline.handlers;
 
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
+import com.svcline.models.Context;
 import com.svcline.models.Error;
 import com.svcline.models.LineResponse;
 import com.svcline.prodline.ProductLineConfiguration;
@@ -13,6 +14,12 @@ import static java.net.HttpURLConnection.*;
 
 public class ConfigurationHandler implements Routeable {
     private static final String ITEM_ID = "{configId}";
+    private Context context;
+
+    @Override
+    public void setContext(Context context) {
+        this.context = context;
+    }
 
     @Override
     public LineResponse get(Route route, HttpRequest request, HttpResponse response) {
@@ -34,7 +41,8 @@ public class ConfigurationHandler implements Routeable {
 
         LineResponse lineResponse;
         try {
-            ProductLineConfiguration plc = DbProdLineConfiguration.read(itemId);
+            DbProdLineConfiguration dbProdLineConfiguration = new DbProdLineConfiguration(context.getProductionLine().getFirestore());
+            ProductLineConfiguration plc = dbProdLineConfiguration.read(itemId);
 
             if (plc != null) {
                 lineResponse = new LineResponse(plc.getConfiguredStationMap());
