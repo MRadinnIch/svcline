@@ -25,8 +25,6 @@ public class BigQueryService {
     private static final String datasetName = "production";
 
     private final String tableName;
-    private final String projectId;
-    private final String serviceAccount;
     private final ProductionLine productionLine;
     private BigQuery bigquery = null;
 
@@ -35,23 +33,25 @@ public class BigQueryService {
             throw new NullPointerException("Production line cannot be null");
 
         this.productionLine = productionLine;
+
+        String projectId;
+        String serviceAccount1;
         if (this.productionLine.getProps().isLiveEnv()) {
             this.tableName = TABLE_LIVE;
-            this.projectId = PROJECT_ID_LIVE;
-            this.serviceAccount = SERVICE_ACCOUNT;
+            projectId = PROJECT_ID_LIVE;
+            serviceAccount1 = SERVICE_ACCOUNT;
         } else {
             this.tableName = TABLE_TEST;
-            this.projectId = PROJECT_ID_SANDBOX;
-            this.serviceAccount = SERVICE_ACCOUNT;
+            projectId = PROJECT_ID_SANDBOX;
+            serviceAccount1 = SERVICE_ACCOUNT;
         }
 
 
-        InputStream serviceAccount = getClass().getClassLoader().getResourceAsStream(this.serviceAccount);
+        InputStream serviceAccount = getClass().getClassLoader().getResourceAsStream(serviceAccount1);
 
         assert serviceAccount != null;
         try {
-            bigquery = BigQueryOptions.newBuilder().setProjectId(this.projectId).setCredentials(GoogleCredentials.fromStream(serviceAccount)).build()
-                    .getService();
+            bigquery = BigQueryOptions.newBuilder().setProjectId(projectId).setCredentials(GoogleCredentials.fromStream(serviceAccount)).build().getService();
         } catch (IOException e) {
             e.printStackTrace();
         }

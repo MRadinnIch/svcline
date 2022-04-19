@@ -15,8 +15,8 @@ import java.util.concurrent.ExecutionException;
 import static java.net.HttpURLConnection.*;
 
 public class LineService {
-    private ProductionLine productionLine;
-    private ClockerService clockerService;
+    private final ProductionLine productionLine;
+    private final ClockerService clockerService;
 
     public LineService(ProductionLine prodLine) {
         productionLine = prodLine;
