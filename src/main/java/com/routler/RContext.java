@@ -1,12 +1,11 @@
-package com.svcline.models;
+package com.routler;
 
-import com.google.cloud.firestore.Firestore;
 import com.svcline.prodline.ProductionLine;
 
-public class Context {
+public class RContext {
     private ProductionLine productionLine;
 
-    public Context(ProductionLine productionLine) {
+    public RContext(ProductionLine productionLine) {
         this.productionLine = productionLine;
     }
 

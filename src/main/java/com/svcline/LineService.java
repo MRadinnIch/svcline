@@ -1,9 +1,9 @@
 package com.svcline;
 
 import com.svcline.handlers.db.DbLineFacacde;
-import com.svcline.models.Error;
+import com.routler.RError;
 import com.svcline.models.LineItem;
-import com.svcline.models.LineResponse;
+import com.routler.RResponse;
 import com.svcline.models.clocker.ClockerService;
 import com.svcline.models.clocker.Operation;
 import com.svcline.prodline.ProductionLine;
@@ -30,11 +30,17 @@ public class LineService {
         clockerService.setTime(itemId, stationId, Operation.PREPARATION);
     }
 
-    public LineResponse toNext(Transition transition) {
-        if (!transition.validate())
-            return new LineResponse(HTTP_BAD_REQUEST, new Error("Line transition validation error for: " + transition));
+    private void produceItem(Transition transition) throws ExecutionException, InterruptedException {
+        String itemId = transition.getId();
 
-        LineResponse lineResponse;
+        clockerService.setTime(itemId, transition.getCurrentStationId(), Operation.PRODUCTION);
+    }
+
+    public RResponse toNext(Transition transition) {
+        if (!transition.validate())
+            return new RResponse(HTTP_BAD_REQUEST, new RError("Line transition validation error for: " + transition));
+
+        RResponse rResponse;
         String itemId = transition.getId();
 
         try {
@@ -49,109 +55,109 @@ public class LineService {
              */
 
             if (actualItemDb == null) { // Check and validate the original item
-                lineResponse = new LineResponse(HTTP_NOT_FOUND,
-                                                new Error("Original item not found for id " + itemId + "."));
+                rResponse = new RResponse(HTTP_NOT_FOUND,
+                                          new RError("Original item not found for id " + itemId + "."));
             } else if (!lineItemIn.validate()) { // Check and validate the "new" item
-                lineResponse = new LineResponse(HTTP_BAD_REQUEST,
-                                                new Error("Failed to validate item for id " + itemId + ". Check arguments."));
+                rResponse = new RResponse(HTTP_BAD_REQUEST,
+                                          new RError("Failed to validate item for id " + itemId + ". Check arguments."));
             } else if (!lineItemIn.getId().equalsIgnoreCase(itemId)) { // Check and validate the "new" item
-                lineResponse = new LineResponse(HTTP_CONFLICT,
-                                                new Error("Body ID not matching path ID. Check arguments."));
+                rResponse = new RResponse(HTTP_CONFLICT,
+                                          new RError("Body ID not matching path ID. Check arguments."));
             } else {
                 // We handle the line transition in the production line
                 LineItem verifiedItem = productionLine.toNextStation(actualItemDb, lineItemIn);
 
                 dbLineFacacde.set(verifiedItem);
 
-                clockerService.setTime(itemId, transition.getCurrentStationId(), Operation.PRODUCTION);
+                produceItem(transition);
 
-                lineResponse = new LineResponse(verifiedItem);
+                rResponse = new RResponse(verifiedItem);
             }
         } catch (IllegalStateException e) {
             e.printStackTrace();
-            lineResponse = new LineResponse(HTTP_CONFLICT, new Error(e.getMessage()));
+            rResponse = new RResponse(HTTP_CONFLICT, new RError(e.getMessage()));
         } catch (InstantiationException e) {
             e.printStackTrace();
-            lineResponse = new LineResponse(HTTP_UNAVAILABLE, new Error(e.getMessage()));
+            rResponse = new RResponse(HTTP_UNAVAILABLE, new RError(e.getMessage()));
         } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
-            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, new Error(e.getMessage()));
+            rResponse = new RResponse(HTTP_INTERNAL_ERROR, new RError(e.getMessage()));
         }
 
-        return lineResponse;
+        return rResponse;
     }
 
-    public LineResponse create(Transition transition) {
+    public RResponse create(Transition transition) {
         // When we create a transition we're only interested in the ID.
         if (transition.getId() == null)
-            return new LineResponse(HTTP_BAD_REQUEST, new Error("Line initiation validation error for: " + transition));
+            return new RResponse(HTTP_BAD_REQUEST, new RError("Line initiation validation error for: " + transition));
 
-        LineResponse lineResponse;
+        RResponse rResponse;
         String itemId = transition.getId();
 
         try {
             DbLineFacacde dbLineFacacde = new DbLineFacacde(productionLine.getFirestore(), productionLine.getProps().isLiveEnv());
 
             if (dbLineFacacde.getFor(itemId) != null) {
-                lineResponse = new LineResponse(HTTP_CONFLICT, new Error("Failed to create existing object for existing id: " + itemId));
+                rResponse = new RResponse(HTTP_CONFLICT, new RError("Failed to create existing object for existing id: " + itemId));
             } else {    // Validations passed, create document
                 LineItem lineItem = productionLine.startProduction(itemId);
 
                 dbLineFacacde.set(lineItem);
 
-                clockerService.setTime(itemId, lineItem.getCurrentStationId(), Operation.PRODUCTION);
+                produceItem(transition);
 
-                lineResponse = new LineResponse(HTTP_CREATED, lineItem);
+                rResponse = new RResponse(HTTP_CREATED, lineItem);
             }
         } catch (InstantiationException e) {
             e.printStackTrace();
-            lineResponse = new LineResponse(HTTP_UNAVAILABLE, new Error(e.getMessage()));
+            rResponse = new RResponse(HTTP_UNAVAILABLE, new RError(e.getMessage()));
         } catch (ExecutionException | InterruptedException | IllegalArgumentException e) {
             e.printStackTrace();
-            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, new Error(e.getMessage()));
+            rResponse = new RResponse(HTTP_INTERNAL_ERROR, new RError(e.getMessage()));
         }
 
-        return lineResponse;
+        return rResponse;
     }
 
-    public LineResponse getItem(String itemId) {
+    public RResponse getItem(String itemId) {
         if (itemId == null)
-            return new LineResponse(HTTP_BAD_REQUEST, new Error("itemId cannot be null!"));
+            return new RResponse(HTTP_BAD_REQUEST, new RError("itemId cannot be null!"));
 
-        LineResponse lineResponse;
+        RResponse rResponse;
         try {
             DbLineFacacde dbLineFacacde = new DbLineFacacde(productionLine.getFirestore(), productionLine.getProps().isLiveEnv());
             LineItem lineItem = dbLineFacacde.getFor(itemId);
 
             if (lineItem != null) {
-                lineResponse = new LineResponse(lineItem);
+                rResponse = new RResponse(lineItem);
             } else {
-                lineResponse = new LineResponse(HTTP_NOT_FOUND, new Error("Item not found for provided id: " + itemId));
+                rResponse = new RResponse(HTTP_NOT_FOUND, new RError("Item not found for provided id: " + itemId));
             }
         } catch (Exception e) {
             e.printStackTrace();
-            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, new Error(e.getMessage()));
+            rResponse = new RResponse(HTTP_INTERNAL_ERROR, new RError(e.getMessage()));
         }
 
-        return lineResponse;
+        return rResponse;
     }
 
-    public LineResponse getAllItems() {
-        LineResponse lineResponse;
+    public RResponse getAllItems() {
+        RResponse rResponse;
         try {
             DbLineFacacde dbLineFacacde = new DbLineFacacde(productionLine.getFirestore(), productionLine.getProps().isLiveEnv());
             ArrayList<LineItem> lineItems = dbLineFacacde.getAll();
 
             if (lineItems != null) {
-                lineResponse = new LineResponse(lineItems);
+                rResponse = new RResponse(lineItems);
             } else {
-                lineResponse = new LineResponse(HTTP_NOT_FOUND, new Error("No items found! Try adding some first ;)"));
+                rResponse = new RResponse(HTTP_NOT_FOUND, new RError("No items found! Try adding some first ;)"));
             }
         } catch (Exception e) {
             e.printStackTrace();
-            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, new Error(e.getMessage()));
+            rResponse = new RResponse(HTTP_INTERNAL_ERROR, new RError(e.getMessage()));
         }
 
-        return lineResponse;
+        return rResponse;
     }
 }

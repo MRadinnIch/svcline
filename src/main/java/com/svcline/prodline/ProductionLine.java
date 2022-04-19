@@ -11,8 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ProductionLine {
-    private static final String SERVICE_ACCOUNT = "radinn-rindus-firebase-adminsdk-ha599-fbeceb59df.json";
-    private static final String PROJECT_ID = "radinn-rindus";
+    private static final String SERVICE_ACCOUNT = "radinn-rindus-sandbox-27eca0521d8d.json";
+    private static final String PROJECT_ID = "radinn-rindus-sandbox";
 
     private String startStationId;
     private String endStationId;
@@ -97,7 +97,8 @@ public class ProductionLine {
 
         // We must have three stations
         if (start == 0 || end == 0 || service == 0)
-            throw new InstantiationException("Initialization failed: production line must have one START, STOP and SERVICE station. Terminating execution.");
+            throw new InstantiationException(
+                    "Initialization failed: production line must have only one START, STOP and SERVICE station. Terminating execution.");
 
         this.props = props;
         this.init = true;
@@ -219,11 +220,10 @@ public class ProductionLine {
                 if (currentStation.isEndStation()) {
                     lineItem.setState(State.DONE);
                     lineItem.setCurrentStationId(this.endStationId);
-                } else if(currentStation.isServiceStation()) {
+                } else if (currentStation.isServiceStation()) {
                     lineItem.setState(newState);
                     lineItem.setCurrentStationId(actualItem.getPreviousStationId());
-                }
-                else {
+                } else {
                     lineItem.setState(newState);
                     //lineItem.setCurrentStationId(...); We do not set current station ID since the one passed in is correct
                 }

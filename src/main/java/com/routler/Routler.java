@@ -1,10 +1,7 @@
-package com.svcline.routler;
+package com.routler;
 
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
-import com.svcline.models.Context;
-import com.svcline.models.Error;
-import com.svcline.models.LineResponse;
 
 import java.util.ArrayList;
 
@@ -64,14 +61,14 @@ public class Routler {
         System.out.println("\n");
     }
 
-    public static LineResponse handle(HttpRequest request, HttpResponse response, Context context) {
+    public static RResponse handle(HttpRequest request, HttpResponse response, RContext RContext) {
         for (Route route : routes) {
             // If we've found our route, and it can be executed. Execute!
             if (route.equalsTo(request.getPath())) {
-                return route.execute(route, request, response, context);
+                return route.execute(route, request, response, RContext);
             }
         }
 
-        return new LineResponse(HTTP_NOT_IMPLEMENTED, new Error("method '" + request.getMethod() + "' not implemented."));
+        return new RResponse(HTTP_NOT_IMPLEMENTED, new RError("method '" + request.getMethod() + "' not implemented."));
     }
 }

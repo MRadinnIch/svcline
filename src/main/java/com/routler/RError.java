@@ -1,9 +1,9 @@
-package com.svcline.models;
+package com.routler;
 
-public class Error {
+public class RError {
     private String errorMessage;
 
-    public Error(String errorMessage) {
+    public RError(String errorMessage) {
         this.errorMessage = errorMessage;
     }
 

@@ -1,24 +1,6 @@
 package com.svcline.handlers;
 
-import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.DocumentSnapshot;
-import com.google.cloud.firestore.Firestore;
-import com.google.cloud.firestore.QueryDocumentSnapshot;
-import com.google.cloud.firestore.QuerySnapshot;
-import com.google.cloud.functions.HttpRequest;
-import com.google.cloud.functions.HttpResponse;
-import com.google.gson.Gson;
-import com.svcline.models.Error;
-import com.svcline.models.LineResponse;
-import com.svcline.models.Unit;
-import com.svcline.routler.Route;
-import com.svcline.routler.Routeable;
-import com.svcline.svcline;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.net.HttpURLConnection.*;
+import com.routler.Routeable;
 
 public abstract class StationHandler implements Routeable {}
     /*private static final String COLLECTION = "units";

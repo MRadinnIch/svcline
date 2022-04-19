@@ -1,29 +1,27 @@
-package com.svcline.models;
+package com.routler;
 
 import com.google.gson.Gson;
-
-import java.net.HttpURLConnection;
 
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_OK;
 
-public class LineResponse {
+public class RResponse {
     private int code;
     private String message;
     private String json;
 
-    public LineResponse() {
+    public RResponse() {
 
     }
 
-    public LineResponse(int code, Object obj) {
+    public RResponse(int code, Object obj) {
         Gson gson = new Gson();
 
         this.code = code;
         this.json = gson.toJson(obj);
     }
 
-    public LineResponse(Object obj) {
+    public RResponse(Object obj) {
         Gson gson = new Gson();
 
         this.code = HTTP_OK;

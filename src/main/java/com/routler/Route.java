@@ -1,9 +1,7 @@
-package com.svcline.routler;
+package com.routler;
 
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
-import com.svcline.models.Context;
-import com.svcline.models.LineResponse;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,8 +41,8 @@ public class Route {
         return pairs;
     }
 
-    public LineResponse execute(Route route, HttpRequest request, HttpResponse response, Context context) {
-        handler.setContext(context);
+    public RResponse execute(Route route, HttpRequest request, HttpResponse response, RContext RContext) {
+        handler.setContext(RContext);
 
         switch (request.getMethod()) {
             case "GET":

@@ -20,11 +20,16 @@ public class ClockerService {
 
         Clocker clocker = dbClockerFacade.getFor(itemId);
         if (clocker == null) {
-            clocker = new Clocker(itemId, this.productionLine.getProductLineConfiguration(),
-                                          this.productionLine.getProps().isTimekeeping());
+            clocker = new Clocker(itemId, this.productionLine.getProductLineConfiguration(), this.productionLine.getProps().isTimekeeping());
         }
         clocker.addTime(stationId, operation);
 
         dbClockerFacade.set(clocker);
+
+        // We export the data to BQ only if we're at the final station and if it's the final operation
+        if (stationId.equals(this.productionLine.getEndStationId()) && operation == Operation.PRODUCTION) {
+            BigQueryService bqs = new BigQueryService(productionLine);
+            bqs.insertEntry(clocker);
+        }
     }
 }

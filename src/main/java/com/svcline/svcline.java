@@ -6,13 +6,13 @@ import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
 import com.svcline.handlers.ConfigurationHandler;
 import com.svcline.handlers.LineHandler;
-import com.svcline.models.Context;
-import com.svcline.models.Error;
-import com.svcline.models.LineResponse;
+import com.routler.RContext;
+import com.routler.RError;
+import com.routler.RResponse;
 import com.svcline.models.Props;
 import com.svcline.prodline.ProductLineConfiguration;
 import com.svcline.prodline.ProductionLine;
-import com.svcline.routler.Routler;
+import com.routler.Routler;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -54,25 +54,25 @@ public class svcline implements HttpFunction {
             e.printStackTrace();
             response.setStatusCode(HttpURLConnection.HTTP_INTERNAL_ERROR);
             try {
-                os.write(bytes(gson.toJson(new Error("Production line initialization failed. Application will not start."))));
+                os.write(bytes(gson.toJson(new RError("Production line initialization failed. Application will not start."))));
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
             return;
         }
 
-        Context context = new Context(productionLine);
+        RContext RContext = new RContext(productionLine);
         // We came so far, now handle the request
-        LineResponse lineResponse = Routler.handle(request, response, context);
+        RResponse rResponse = Routler.handle(request, response, RContext);
 
         // Attempt returning the actual response
         try {
-            if (lineResponse != null) {
-                response.setStatusCode(lineResponse.getCode());
-                os.write(bytes(lineResponse.getJson()));
+            if (rResponse != null) {
+                response.setStatusCode(rResponse.getCode());
+                os.write(bytes(rResponse.getJson()));
             } else {
                 response.setStatusCode(HttpURLConnection.HTTP_INTERNAL_ERROR);
-                os.write(bytes(gson.toJson(new Error("Unexpected error while handling request."))));
+                os.write(bytes(gson.toJson(new RError("Unexpected error while handling request."))));
             }
         } catch (IOException e) {
             e.printStackTrace();

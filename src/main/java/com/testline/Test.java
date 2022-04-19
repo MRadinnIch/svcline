@@ -1,13 +1,9 @@
 package com.testline;
 
-import com.google.gson.Gson;
 import com.svcline.LineService;
 import com.svcline.models.*;
-import com.svcline.models.clocker.Clocker;
-import com.svcline.models.clocker.ClockerService;
-import com.svcline.models.clocker.Operation;
-import com.svcline.models.clocker.db.DbClockerFacade;
 import com.svcline.prodline.*;
+import com.routler.RResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -86,9 +82,9 @@ public class Test {
 
         Transition create = new Transition(itemId1);
         Transition second = new Transition(itemId1, station2.getId(), State.PASS);
-        Transition third = new Transition(itemId1, station3.getId(), State.FAIL);
-        Transition service = new Transition(itemId1, serviceStation.getId(), State.PASS);
-        //Transition scrapped = new Transition(itemId1, station4.getId(), State.PASS);
+        Transition third = new Transition(itemId1, station3.getId(), State.PASS);
+        Transition fourth = new Transition(itemId1, station4.getId(), State.PASS);
+        Transition end = new Transition(itemId1, station5.getId(), State.PASS);
 
         lineService.prepareItem(create);
         run(lineService.create(create), true);
@@ -99,15 +95,14 @@ public class Test {
         lineService.prepareItem(third);
         run(lineService.toNext(third), true);
 
-        lineService.prepareItem(service);
-        run(lineService.toNext(service), true);
+        lineService.prepareItem(fourth);
+        run(lineService.toNext(fourth), true);
 
-/*        clocker.preparation(scrapped.getId());
-        run(lineService.toNext(scrapped), true);
-        clocker.production(scrapped.getId());*/
+        lineService.prepareItem(end);
+        run(lineService.toNext(end), true);
     }
 
-    private static void run(LineResponse lr, boolean succeed) {
+    private static void run(RResponse lr, boolean succeed) {
         System.out.println(lr);
         if (succeed)
             assert (lr.succeeded());

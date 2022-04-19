@@ -2,78 +2,78 @@ package com.svcline.handlers;
 
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
-import com.svcline.models.Context;
-import com.svcline.models.Error;
-import com.svcline.models.LineResponse;
+import com.routler.RContext;
+import com.routler.RError;
+import com.routler.RResponse;
 import com.svcline.prodline.ProductLineConfiguration;
 import com.svcline.prodline.db.DbProdLineConfiguration;
-import com.svcline.routler.Route;
-import com.svcline.routler.Routeable;
+import com.routler.Route;
+import com.routler.Routeable;
 
 import static java.net.HttpURLConnection.*;
 
 public class ConfigurationHandler implements Routeable {
     private static final String ITEM_ID = "{configId}";
-    private Context context;
+    private RContext RContext;
 
     @Override
-    public void setContext(Context context) {
-        this.context = context;
+    public void setContext(RContext RContext) {
+        this.RContext = RContext;
     }
 
     @Override
-    public LineResponse get(Route route, HttpRequest request, HttpResponse response) {
-        LineResponse lineResponse;
+    public RResponse get(Route route, HttpRequest request, HttpResponse response) {
+        RResponse rResponse;
 
         if (!route.isNaked()) {
-            lineResponse = getFor(route.getPathVal(ITEM_ID));
+            rResponse = getFor(route.getPathVal(ITEM_ID));
         } else {
-            return new LineResponse(HTTP_BAD_REQUEST, new Error("Provide config ID which you want."));
+            return new RResponse(HTTP_BAD_REQUEST, new RError("Provide config ID which you want."));
         }
 
-        return lineResponse;
+        return rResponse;
     }
 
-    private LineResponse getFor(String itemId) {
+    private RResponse getFor(String itemId) {
         if (itemId == null || itemId.isBlank()) {
-            return new LineResponse(HTTP_BAD_REQUEST, new Error("Error while looking up configuration due to miss-crafted id."));
+            return new RResponse(HTTP_BAD_REQUEST, new RError("Error while looking up configuration due to miss-crafted id."));
         }
 
-        LineResponse lineResponse;
+        RResponse rResponse;
         try {
-            DbProdLineConfiguration dbProdLineConfiguration = new DbProdLineConfiguration(context.getProductionLine().getFirestore());
+            DbProdLineConfiguration dbProdLineConfiguration = new DbProdLineConfiguration(RContext.getProductionLine().getFirestore());
             ProductLineConfiguration plc = dbProdLineConfiguration.read(itemId);
 
             if (plc != null) {
-                lineResponse = new LineResponse(plc.getConfiguredStationMap());
+                rResponse = new RResponse(plc.getConfiguredStationMap());
             } else {
-                lineResponse = new LineResponse(HTTP_NOT_FOUND, new Error("Configuration not found for provided id: " + itemId));
+                rResponse = new RResponse(HTTP_NOT_FOUND, new RError("Configuration not found for provided id: " + itemId));
             }
         } catch (Exception e) {
             e.printStackTrace();
-            lineResponse = new LineResponse(HTTP_INTERNAL_ERROR, new Error(e.getMessage()));
+            rResponse = new RResponse(HTTP_INTERNAL_ERROR, new RError(e.getMessage()));
         }
 
-        return lineResponse;
+        return rResponse;
     }
 
     @Override
-    public LineResponse put(Route route, HttpRequest request, HttpResponse response) {
+    public RResponse put(Route route, HttpRequest request, HttpResponse response) {
         return null;
     }
 
     @Override
-    public LineResponse patch(Route route, HttpRequest request, HttpResponse response) {
+    public RResponse patch(Route route, HttpRequest request, HttpResponse response) {
         return null;
     }
 
     @Override
-    public LineResponse post(Route route, HttpRequest request, HttpResponse response) {
+    public RResponse post(Route route, HttpRequest request, HttpResponse response) {
         return null;
     }
 
     @Override
-    public LineResponse delete(Route route, HttpRequest request, HttpResponse response) {
+    public RResponse delete(Route route, HttpRequest request, HttpResponse response) {
         return null;
     }
 }
