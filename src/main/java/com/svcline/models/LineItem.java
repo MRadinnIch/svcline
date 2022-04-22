@@ -16,12 +16,12 @@ public class LineItem extends Transition {
         this.state = tr.getState();
     }
 
-    public LineItem(String id, String currentStationId) {
+    /*public LineItem(String id, String currentStationId) {
         this.id = id;
         this.currentStationId = currentStationId;
         this.previousStationId = null;
         this.state = State.START;
-    }
+    }*/
 
     public LineItem(String id, String currentStationId, String previousStationId, State state) {
         this.id = id;
@@ -83,17 +83,37 @@ public class LineItem extends Transition {
 
     @Exclude
     public boolean isScrapped() {
-        return (this.state == State.SCRAP);
+        return this.state == State.SCRAPED;
     }
 
     @Exclude
     public boolean isDone() {
-        return (this.state == State.DONE);
+        return this.state == State.DONE;
+    }
+
+    @Exclude
+    public boolean isPassed(){
+        return this.state == State.PASSED;
     }
 
     @Exclude
     public boolean isFailed() {
-        return (this.state == State.FAIL);
+        return this.state == State.FAILED;
+    }
+
+    @Exclude
+    public boolean isStarted() {
+        return this.state == State.STARTED;
+    }
+
+    @Exclude
+    public boolean isRetried() {
+        return this.state == State.RETRIED;
+    }
+
+    @Exclude
+    public boolean isCreated() {
+        return this.state == State.CREATED;
     }
 
     @Override

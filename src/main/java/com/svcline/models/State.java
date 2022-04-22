@@ -1,5 +1,5 @@
 package com.svcline.models;
 
 public enum State {
-    START, PASS, FAIL, SCRAP, RETRY, DONE
+    CREATED, STARTED, PASSED, FAILED, SCRAPED, RETRIED, DONE
 }

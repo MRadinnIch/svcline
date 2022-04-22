@@ -61,6 +61,8 @@ public class BigQueryService {
         if (!this.productionLine.getProps().isTimekeeping()) {
             logger.info("Timekeeping not enabled. Times will not be measured.");
             return;
+        } else if (!this.productionLine.getProps().isClocking()) {
+            logger.info("Cannot measure times if clocking is disabled.");
         }
 
         List<TableCell> timeListObject = new ArrayList<>();

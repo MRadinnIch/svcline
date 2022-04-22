@@ -16,6 +16,9 @@ public class ClockerService {
     }
 
     public void setTime(String itemId, String stationId, Operation operation) throws ExecutionException, InterruptedException {
+        if(!this.productionLine.getProps().isClocking())
+            return;
+
         DbClockerFacade dbClockerFacade = new DbClockerFacade(this.productionLine.getFirestore(), this.productionLine.getProps().isLiveEnv());
 
         Clocker clocker = dbClockerFacade.getFor(itemId);

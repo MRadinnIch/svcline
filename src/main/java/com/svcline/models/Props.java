@@ -9,7 +9,8 @@ public class Props {
     private String buttonColorTxt;
     private String currentlyLoadedConfiguration;
     private String environment;
-    private boolean timekeeping;
+    private final boolean timekeeping;
+    private final boolean clocking;
 
     public Props() throws IOException {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -23,6 +24,7 @@ public class Props {
         this.currentlyLoadedConfiguration = properties.getProperty("line.configuration");
         this.environment = properties.getProperty("environment");
         this.timekeeping = properties.getProperty("timekeeping").equalsIgnoreCase("true");
+        this.clocking = properties.getProperty("clocking").equalsIgnoreCase("true");
     }
 
     public String getButtonColorBg() {
@@ -63,6 +65,11 @@ public class Props {
 
     public boolean isTimekeeping() {
         return timekeeping;
+    }
+
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    public boolean isClocking() {
+        return clocking;
     }
 
     @Override

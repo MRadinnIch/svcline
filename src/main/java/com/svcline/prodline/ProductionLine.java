@@ -143,7 +143,7 @@ public class ProductionLine {
     public LineItem startProduction(String id) throws InstantiationException {
         initCheck();
 
-        return new LineItem(id, startStationId, null, State.START);
+        return new LineItem(id, startStationId, null, State.CREATED);
     }
 
     public HashMap<String, Station> getStationMap() {
@@ -189,9 +189,7 @@ public class ProductionLine {
         return firestore;
     }
 
-    public LineItem toNextStation(LineItem actualItem, LineItem currentLineItem) throws IllegalStateException, InstantiationException {
-        initCheck();
-
+    private void performStationChecks(LineItem actualItem, LineItem currentLineItem){
         State newState = currentLineItem.getState();
         Station currentStation = getStation(currentLineItem.getCurrentStationId());
 
@@ -207,16 +205,26 @@ public class ProductionLine {
         } else if (actualItem.isFailed() && !currentStation.isServiceStation()) {
             throw new IllegalStateException("This item should in the service station. This station is a " + currentStation.getStationType() + ".");
         }
+    }
+
+    public LineItem toNextStation(LineItem actualItem, LineItem currentLineItem) throws IllegalStateException, InstantiationException {
+        initCheck();
+
+        State newState = currentLineItem.getState();
+        Station currentStation = getStation(currentLineItem.getCurrentStationId());
+
+        performStationChecks(actualItem, currentLineItem);
 
         LineItem lineItem = new LineItem(currentLineItem);
         switch (newState) {
-            case RETRY:
+            case RETRIED:
                 lineItem.setPreviousStationId(actualItem.getCurrentStationId());
                 lineItem.setCurrentStationId(actualItem.getPreviousStationId());
                 lineItem.setState(newState);
+
                 break;
 
-            case PASS:
+            case PASSED:
                 if (currentStation.isEndStation()) {
                     lineItem.setState(State.DONE);
                     lineItem.setCurrentStationId(this.endStationId);
@@ -228,20 +236,22 @@ public class ProductionLine {
                     //lineItem.setCurrentStationId(...); We do not set current station ID since the one passed in is correct
                 }
 
-                lineItem.setPreviousStationId(actualItem.getCurrentStationId());
+                lineItem.setPreviousStationId(actualItem.getPreviousStationId());
 
                 break;
 
-            case FAIL:
+            case FAILED:
                 lineItem.setPreviousStationId(currentLineItem.getCurrentStationId());
                 lineItem.setCurrentStationId(this.serviceStationId);    // If we fail we go to the service station
                 lineItem.setState(newState);
+
                 break;
 
-            case SCRAP:
+            case SCRAPED:
                 lineItem.setCurrentStationId(getServiceStationId());
                 lineItem.setPreviousStationId(getServiceStationId());
                 lineItem.setState(newState);
+
                 break;
 
             case DONE:
@@ -259,9 +269,25 @@ public class ProductionLine {
     private boolean isInCorrectLineOrder(LineItem actualLineItem, LineItem currentItem) {
         if (actualLineItem == null || currentItem == null || actualLineItem.getId() == null || currentItem.getCurrentStationId() == null)
             return false;
+        else if (actualLineItem.isStarted() && !(currentItem.isPassed() || currentItem.isRetried()))
+            return false;
+        else if ((actualLineItem.getCurrentStationId().equals(currentItem.getCurrentStationId())) && (actualLineItem.isStarted() || actualLineItem.isCreated()))
+            return true;
         else if (actualLineItem.isFailed() || actualLineItem.isScrapped())
             return true;    // We do not check failed or scrapped items.
 
         return currentItem.getCurrentStationId().equals(this.stationTransitionMap.get(actualLineItem.getCurrentStationId()));
+    }
+
+    public LineItem fromStation(LineItem actualItem, LineItem currentLineItem) throws InstantiationException {
+        initCheck();
+
+        performStationChecks(actualItem, currentLineItem);
+
+        LineItem lineItem = new LineItem(currentLineItem);
+        lineItem.setPreviousStationId(actualItem.getCurrentStationId());
+        lineItem.setState(State.STARTED);
+
+        return lineItem;
     }
 }

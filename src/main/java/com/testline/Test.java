@@ -1,9 +1,9 @@
 package com.testline;
 
+import com.routler.RResponse;
 import com.svcline.LineService;
 import com.svcline.models.*;
 import com.svcline.prodline.*;
-import com.routler.RResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,10 +32,10 @@ public class Test {
         productLineConfiguration.setConfiguredStationMap(configuredStationMap);
         productLineConfiguration.setConfiguredStationOrder(configuredStationOrder);
 
-        Action pass = new Action("Next", State.PASS);
-        Action failed = new Action("Failed", State.FAIL);
-        Action retry = new Action("Retry", State.RETRY);
-        Action scrap = new Action("Scrap item", State.SCRAP);
+        Action pass = new Action("Next", State.PASSED);
+        Action failed = new Action("Failed", State.FAILED);
+        Action retry = new Action("Retry", State.RETRIED);
+        Action scrap = new Action("Scrap item", State.SCRAPED);
 
         Station station1 = new Station("3001", "Start Station", StationType.START,
                                        new ArrayList<>(List.of(pass, failed)));
@@ -80,28 +80,30 @@ public class Test {
         String itemId1 = "100001";
         LineService lineService = new LineService(productionLine);
 
-        Transition create = new Transition(itemId1);
-        Transition second = new Transition(itemId1, station2.getId(), State.PASS);
-        Transition third = new Transition(itemId1, station3.getId(), State.PASS);
-        Transition fourth = new Transition(itemId1, station4.getId(), State.PASS);
-        Transition end = new Transition(itemId1, station5.getId(), State.PASS);
+        Transition create = new Transition(itemId1, station1.getId(), State.PASSED);
+        Transition second = new Transition(itemId1, station2.getId(), State.PASSED);
+        Transition third = new Transition(itemId1, station3.getId(), State.PASSED);
+        Transition fourth = new Transition(itemId1, station4.getId(), State.PASSED);
+        Transition end = new Transition(itemId1, station5.getId(), State.PASSED);
 
-        lineService.prepareItem(create);
-        run(lineService.create(create), true);
+        //lineService.stationItemStart(create);
+        run(lineService.startProduction(new Transition(create.getId(), create.getCurrentStationId(), State.CREATED)), true);
+        run(lineService.stationItemStop(create), true);
 
-        lineService.prepareItem(second);
-        run(lineService.toNext(second), true);
+        run(lineService.stationItemStart(second), true);
+        run(lineService.stationItemStop(second), true);
 
-        lineService.prepareItem(third);
-        run(lineService.toNext(third), true);
+        run(lineService.stationItemStart(third), true);
+        run(lineService.stationItemStop(third), true);
 
-        lineService.prepareItem(fourth);
-        run(lineService.toNext(fourth), true);
+        run(lineService.stationItemStart(fourth), true);
+        run(lineService.stationItemStop(fourth), true);
 
-        lineService.prepareItem(end);
-        run(lineService.toNext(end), true);
+        run(lineService.stationItemStart(end), true);
+        run(lineService.stationItemStop(end), true);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static void run(RResponse lr, boolean succeed) {
         System.out.println(lr);
         if (succeed)

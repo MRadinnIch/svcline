@@ -67,10 +67,10 @@ public class ProductLineConfiguration {
     }
 
     public void loadTestConfiguration() {
-        Action pass = new Action("Next", State.PASS);
-        Action failed = new Action("Failed", State.FAIL);
-        Action retry = new Action("Retry", State.RETRY);
-        Action scrap = new Action("Scrap item", State.SCRAP);
+        Action pass = new Action("Next", State.PASSED);
+        Action failed = new Action("Failed", State.FAILED);
+        Action retry = new Action("Retry", State.RETRIED);
+        Action scrap = new Action("Scrap item", State.SCRAPED);
 
         Station station1 = new Station("1001", "Start Station", StationType.START,
                                        new ArrayList<>(List.of(pass, failed)));

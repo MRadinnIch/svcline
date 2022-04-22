@@ -57,7 +57,7 @@ public class LineHandler implements Routeable {
         }
 
         LineService lineService = new LineService(RContext.getProductionLine());
-        return lineService.toNext(transition);
+        return lineService.stationItemStop(transition);
     }
 
     @Override
@@ -79,7 +79,7 @@ public class LineHandler implements Routeable {
         LineService lineService = new LineService(RContext.getProductionLine());
 
         try {
-            lineService.prepareItem(transition);
+            lineService.stationItemStart(transition);
         } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
             return new RResponse(HTTP_BAD_REQUEST, new RError("Item not prepared for processing please prepare."));
@@ -100,7 +100,7 @@ public class LineHandler implements Routeable {
         }
 
         LineService lineService = new LineService(RContext.getProductionLine());
-        return lineService.create(transition);
+        return lineService.startProduction(transition);
     }
 
     @Override
