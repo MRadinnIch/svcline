@@ -23,6 +23,10 @@ public class StationMap {
         this.stationMap = stationMap;
     }
 
+    public Station getStationById(String stationId) {
+        return stationMap.get(stationId);
+    }
+
     public boolean registered(String k) {
         return stationMap.containsKey(k);
     }

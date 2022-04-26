@@ -1,9 +1,12 @@
-package com.svcline.models.clocker;
+package com.svcline.models.clocker.bq;
 
 import com.google.api.services.bigquery.model.TableCell;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableList;
+import com.svcline.models.clocker.Clocker;
+import com.svcline.models.clocker.Times;
+import com.svcline.models.clocker.Timing;
 import com.svcline.prodline.ProductionLine;
 
 import java.io.IOException;
@@ -16,6 +19,19 @@ import java.util.logging.Logger;
 
 public class BigQueryService {
     private static final Logger logger = Logger.getLogger(BigQueryService.class.getName());
+    private static final String ITEM_ID = "itemId";
+    private static final String ITEM_PRODUCTION_TIME = "itemProductionTime";
+    private static final String ESTIMATED_ITEM_PRODUCTION_TIME = "estimatedItemProductionTime";
+    private static final String ITEM_PRODUCTION_TIME_DEVIATION = "itemProductionTimeDeviation";
+    private static final String TIMES_LIST = "timesList";
+    private static final String OPERATION = "operation";
+    private static final String TIMESTAMP = "timestamp";
+    private static final String STATION_ID = "stationId";
+    private static final String STATION_PRODUCTION_TIME = "stationProductionTime";
+    private static final String STATION_PRODUCTION_LEAD_TIME = "stationProductionLeadTime";
+    private static final String ESTIMATED_STATION_PRODUCTION_TIME = "estimatedStationProductionTime";
+    private static final String STATION_PRODUCTION_TIME_DEVIATION = "stationProductionTimeDeviation";
+    private static final String TIMING_LIST = "timingList";
 
     private static final String TABLE_LIVE = "timekeeper";
     private static final String TABLE_TEST = "timekeeperTest";
@@ -65,19 +81,38 @@ public class BigQueryService {
             logger.info("Cannot measure times if clocking is disabled.");
         }
 
-        List<TableCell> timeListObject = new ArrayList<>();
-        for (Times times : clocker.getTimesList()) {
+        BqEntry bqEntry = BqEntry.from(clocker);
+        bqEntry.setEstimatedItemProductionTime(productionLine.getProductLineConfiguration().getEstimatedItemProductionTime());
+        bqEntry.calculateItemProductionTime();
+        bqEntry.calculateStationTimes();
+
+        List<TableCell> timesListObject = new ArrayList<>();
+        int ix = 0;
+        for (Times times : bqEntry.getTimesList()) {
             List<TableCell> timingListObject = new ArrayList<>();
             for (Timing timing : times.getTimingList()) {
-                timingListObject.add(new TableCell().set("operation", timing.getOperation().name()).set("timestamp", timing.getTimestamp().toString()));
+                timingListObject.add(new TableCell().set(OPERATION, timing.getOperation().name()).set(TIMESTAMP, timing.getTimestamp().toString()));
             }
 
-            timeListObject.add(new TableCell().set("stationId", times.getStationId()).set("timingList", timingListObject));
+            timesListObject.add(new TableCell()
+                                        .set(STATION_ID, times.getStationId())
+                                        .set(STATION_PRODUCTION_TIME, bqEntry.getStationProductionTimeFor(ix))
+                                        .set(STATION_PRODUCTION_LEAD_TIME, bqEntry.getStationProductionLeadTimeFor(ix))
+                                        .set(ESTIMATED_STATION_PRODUCTION_TIME, bqEntry.getEstimatedStationProductionTimeFor(ix))
+                                        .set(STATION_PRODUCTION_TIME_DEVIATION, bqEntry.getStationProductionTimeDeviationFor(ix))
+                                        .set(TIMING_LIST, timingListObject));
+
+            ix++;
         }
 
+        System.out.println("Item production lasted: " + bqEntry.getItemProductionTimeInSeconds());
+
         Map<String, Object> rowContent = new HashMap<>();
-        rowContent.put("itemId", clocker.getItemId());
-        rowContent.put("timesList", timeListObject);
+        rowContent.put(ITEM_ID, bqEntry.getItemId());
+        rowContent.put(TIMES_LIST, timesListObject);
+        rowContent.put(ITEM_PRODUCTION_TIME, bqEntry.getItemProductionTimeInSeconds());
+        rowContent.put(ESTIMATED_ITEM_PRODUCTION_TIME, bqEntry.getEstimatedItemProductionTime());
+        rowContent.put(ITEM_PRODUCTION_TIME_DEVIATION, bqEntry.getItemProductionTimeDeviation());
 
         InsertAllResponse response =
                 bigquery.insertAll(

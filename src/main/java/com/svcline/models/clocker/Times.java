@@ -51,7 +51,7 @@ public class Times {
 
     @Exclude
     public boolean operationPrepared(Operation currentOperation) {
-        return !(currentOperation == Operation.PRODUCTION && timingList.size() == 0);
+        return !(currentOperation == Operation.STOP && timingList.size() == 0);
     }
 
     @Exclude

@@ -9,15 +9,17 @@ public class Station {
     private String name;
     private StationType stationType;
     private ArrayList<Action> allowedActions;
+    private Double estimatedStationProductionTime;
 
     public Station() {
     }
 
-    public Station(String id, String name, StationType stationType, ArrayList<Action> allowedActions) {
+    public Station(String id, String name, StationType stationType, ArrayList<Action> allowedActions, Double estimatedStationProductionTime) {
         this.id = id;
         this.name = name;
         this.stationType = stationType;
         this.allowedActions = allowedActions;
+        this.estimatedStationProductionTime = estimatedStationProductionTime;
     }
 
     public String getId() {
@@ -76,6 +78,14 @@ public class Station {
     @Exclude
     public boolean isStartStation() {
         return this.stationType == StationType.START;
+    }
+
+    public Double getEstimatedStationProductionTime() {
+        return estimatedStationProductionTime;
+    }
+
+    public void setEstimatedStationProductionTime(Double estimatedStationProductionTime) {
+        this.estimatedStationProductionTime = estimatedStationProductionTime;
     }
 
     public boolean allowedState(State stateToCompare) {

@@ -16,13 +16,6 @@ public class LineItem extends Transition {
         this.state = tr.getState();
     }
 
-    /*public LineItem(String id, String currentStationId) {
-        this.id = id;
-        this.currentStationId = currentStationId;
-        this.previousStationId = null;
-        this.state = State.START;
-    }*/
-
     public LineItem(String id, String currentStationId, String previousStationId, State state) {
         this.id = id;
         this.currentStationId = currentStationId;
@@ -88,7 +81,7 @@ public class LineItem extends Transition {
 
     @Exclude
     public boolean isDone() {
-        return this.state == State.DONE;
+        return this.state == State.FINISHED;
     }
 
     @Exclude

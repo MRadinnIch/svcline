@@ -71,4 +71,15 @@ public class DbClockerFacade {
 
         return clockedItems;
     }
+
+
+    public void deleteFor(String itemId) throws ExecutionException, InterruptedException {
+        ApiFuture<WriteResult> wr = db.collection(activeCollection).document(itemId).delete();
+
+        //noinspection StatementWithEmptyBody
+        while (!wr.isDone()) { /* We lock the thread waiting for the Firestore operation to be done. using callbacks does not help  */ }
+
+        //noinspection ResultOfMethodCallIgnored
+        wr.get().getUpdateTime();
+    }
 }

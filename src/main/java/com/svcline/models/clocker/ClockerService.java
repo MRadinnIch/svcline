@@ -1,5 +1,6 @@
 package com.svcline.models.clocker;
 
+import com.svcline.models.clocker.bq.BigQueryService;
 import com.svcline.models.clocker.db.DbClockerFacade;
 import com.svcline.prodline.ProductionLine;
 
@@ -30,9 +31,20 @@ public class ClockerService {
         dbClockerFacade.set(clocker);
 
         // We export the data to BQ only if we're at the final station and if it's the final operation
-        if (stationId.equals(this.productionLine.getEndStationId()) && operation == Operation.PRODUCTION) {
+        if (stationId.equals(this.productionLine.getEndStationId()) && operation == Operation.STOP) {
             BigQueryService bqs = new BigQueryService(productionLine);
             bqs.insertEntry(clocker);
         }
+    }
+
+    public void deleteFor(String itemId) throws ExecutionException, InterruptedException {
+        if (this.productionLine.getProps().isLiveEnv()) {
+            System.out.println("Not allowed to delete entry in production.");
+            return;
+        }
+
+        DbClockerFacade dbClockerFacade = new DbClockerFacade(this.productionLine.getFirestore(), false);
+
+        dbClockerFacade.deleteFor(itemId);
     }
 }

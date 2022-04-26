@@ -1,0 +1,76 @@
+[
+  {
+    "name": "itemId",
+    "mode": "NULLABLE",
+    "type": "STRING"
+  },
+  {
+    "description": "",
+    "mode": "NULLABLE",
+    "name": "itemProductionTime",
+    "type": "STRING"
+  },
+  {
+    "description": "",
+    "mode": "NULLABLE",
+    "name": "estimatedItemProductionTime",
+    "type": "STRING"
+  },
+  {
+    "description": "",
+    "mode": "NULLABLE",
+    "name": "itemProductionTimeDeviation",
+    "type": "STRING"
+  },
+  {
+    "name": "timesList",
+    "type": "record",
+    "mode": "repeated",
+    "fields": [
+      {
+        "name": "stationId",
+        "mode": "NULLABLE",
+        "type": "STRING"
+      },
+      {
+        "name": "stationProductionTime",
+        "mode": "NULLABLE",
+        "type": "STRING"
+      },
+      {
+        "name": "stationProductionLeadTime",
+        "mode": "NULLABLE",
+        "type": "STRING"
+      },
+      {
+        "description": "",
+        "mode": "NULLABLE",
+        "name": "estimatedStationProductionTime",
+        "type": "STRING"
+      },
+      {
+        "description": "",
+        "mode": "NULLABLE",
+        "name": "stationProductionTimeDeviation",
+        "type": "STRING"
+      },
+      {
+        "name": "timingList",
+        "type": "record",
+        "mode": "repeated",
+        "fields": [
+          {
+            "name": "operation",
+            "mode": "NULLABLE",
+            "type": "STRING"
+          },
+          {
+            "name": "timestamp",
+            "mode": "NULLABLE",
+            "type": "TIMESTAMP"
+          }
+        ]
+      }
+    ]
+  }
+]

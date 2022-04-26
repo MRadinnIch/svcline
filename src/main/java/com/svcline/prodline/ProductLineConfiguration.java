@@ -16,6 +16,7 @@ public class ProductLineConfiguration {
     private String version;
     private StationMap configuredStationMap;
     private StationOrderMap configuredStationOrder;
+    private Double estimatedItemProductionTime;
 
     @Exclude
     private Firestore firestore;
@@ -27,6 +28,15 @@ public class ProductLineConfiguration {
         this.configuredStationMap = new StationMap();
         this.configuredStationOrder = new StationOrderMap();
         this.firestore = firestore;
+        this.estimatedItemProductionTime = 0.0;
+    }
+
+    public Double getEstimatedItemProductionTime() {
+        return estimatedItemProductionTime;
+    }
+
+    public void setEstimatedItemProductionTime(Double estimatedItemProductionTime) {
+        this.estimatedItemProductionTime = estimatedItemProductionTime;
     }
 
     public String getVersion() {
@@ -64,6 +74,7 @@ public class ProductLineConfiguration {
 
         this.configuredStationMap = plc.configuredStationMap;
         this.configuredStationOrder = plc.getConfiguredStationOrder();
+        this.estimatedItemProductionTime = plc.getEstimatedItemProductionTime();
     }
 
     public void loadTestConfiguration() {
@@ -73,22 +84,22 @@ public class ProductLineConfiguration {
         Action scrap = new Action("Scrap item", State.SCRAPED);
 
         Station station1 = new Station("1001", "Start Station", StationType.START,
-                                       new ArrayList<>(List.of(pass, failed)));
+                                       new ArrayList<>(List.of(pass, failed)), 1.0);
 
         Station station2 = new Station("1002", "Second Station", StationType.PRODUCTION,
-                                       new ArrayList<>(List.of(pass, failed)));
+                                       new ArrayList<>(List.of(pass, failed)), 2.0);
 
         Station station3 = new Station("1003", "Third Station", StationType.PRODUCTION,
-                                       new ArrayList<>(List.of(pass, failed)));
+                                       new ArrayList<>(List.of(pass, failed)), 3.0);
 
         Station station4 = new Station("1004", "End Station", StationType.END,
-                                       new ArrayList<>(List.of(pass, failed)));
+                                       new ArrayList<>(List.of(pass, failed)), 4.0);
 
         //Station station5 = new Station("2005", "End Station", StationType.END,
         //                               new ArrayList<>(List.of(State.PASS, State.FAIL)));
 
         Station serviceStation = new Station("2001", "Service Station", StationType.SERVICE,
-                                             new ArrayList<>(List.of(pass, retry, scrap)));
+                                             new ArrayList<>(List.of(pass, retry, scrap)), 5.0);
         configuredStationMap.addStation(station1);
         configuredStationMap.addStation(station2);
         configuredStationMap.addStation(station3);
@@ -98,6 +109,8 @@ public class ProductLineConfiguration {
         configuredStationOrder.addStationTransition(station1.getId(), station2.getId());
         configuredStationOrder.addStationTransition(station2.getId(), station3.getId());
         configuredStationOrder.addStationTransition(station3.getId(), station4.getId());
+
+        estimatedItemProductionTime = 15.0;
     }
 
     @Override

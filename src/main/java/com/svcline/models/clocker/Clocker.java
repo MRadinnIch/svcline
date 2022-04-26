@@ -7,11 +7,11 @@ import com.svcline.prodline.ProductLineConfiguration;
 import java.util.ArrayList;
 
 public class Clocker {
-    private String itemId;
-    private ProductLineConfiguration plConfiguration;   // The configuration used for this measurement
-    private ArrayList<Times> timesList = new ArrayList<>();
+    protected String itemId;
+    protected ProductLineConfiguration plConfiguration;   // The configuration used for this measurement
+    protected ArrayList<Times> timesList = new ArrayList<>();
     @Exclude
-    private boolean timekeeping = false;
+    protected boolean timekeeping = false;
 
     public Clocker() {
     }
@@ -49,13 +49,13 @@ public class Clocker {
     @Exclude
     public void production(String stationId) {
         if(this.timekeeping)
-            addTime(stationId, Operation.PRODUCTION);
+            addTime(stationId, Operation.STOP);
     }
 
     @Exclude
     public void preparation(String stationId) {
         if(this.timekeeping)
-            addTime(stationId, Operation.PREPARATION);
+            addTime(stationId, Operation.START);
     }
 
     @Exclude

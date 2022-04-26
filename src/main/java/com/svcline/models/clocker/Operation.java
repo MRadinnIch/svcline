@@ -1,5 +1,14 @@
 package com.svcline.models.clocker;
 
 public enum Operation {
-    PREPARATION, PRODUCTION
+    START(0), STOP(1);
+
+    private final int value;
+    Operation(int v) {
+        this.value = v;
+    }
+
+    public int getValue(){
+        return this.value;
+    }
 }

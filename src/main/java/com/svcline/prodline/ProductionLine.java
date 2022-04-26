@@ -226,7 +226,7 @@ public class ProductionLine {
 
             case PASSED:
                 if (currentStation.isEndStation()) {
-                    lineItem.setState(State.DONE);
+                    lineItem.setState(State.FINISHED);
                     lineItem.setCurrentStationId(this.endStationId);
                 } else if (currentStation.isServiceStation()) {
                     lineItem.setState(newState);
@@ -254,7 +254,7 @@ public class ProductionLine {
 
                 break;
 
-            case DONE:
+            case FINISHED:
                 lineItem.setCurrentStationId(this.endStationId);
                 lineItem.setPreviousStationId(currentLineItem.getCurrentStationId());
                 lineItem.setState(newState);

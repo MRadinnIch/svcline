@@ -4,6 +4,7 @@ import com.svcline.handlers.db.DbLineFacacde;
 import com.routler.RError;
 import com.svcline.models.LineItem;
 import com.routler.RResponse;
+import com.svcline.models.State;
 import com.svcline.models.clocker.ClockerService;
 import com.svcline.models.clocker.Operation;
 import com.svcline.prodline.ProductionLine;
@@ -133,6 +134,7 @@ public class LineService {
 
         RResponse rResponse;
         String itemId = transition.getId();
+        transition.setState(State.CREATED);
 
         try {
             DbLineFacacde dbLineFacacde = new DbLineFacacde(productionLine.getFirestore(), productionLine.getProps().isLiveEnv());
@@ -182,6 +184,7 @@ public class LineService {
 
     public RResponse getAllItems() {
         RResponse rResponse;
+
         try {
             DbLineFacacde dbLineFacacde = new DbLineFacacde(productionLine.getFirestore(), productionLine.getProps().isLiveEnv());
             ArrayList<LineItem> lineItems = dbLineFacacde.getAll();
@@ -199,15 +202,40 @@ public class LineService {
         return rResponse;
     }
 
+    public RResponse deleteLineEntryForItem(String itemId) {
+        if (this.productionLine.getProps().isLiveEnv())
+            return new RResponse(HTTP_FORBIDDEN, new RError("Not allowed to delete entry in production."));
+
+        RResponse rResponse;
+        try {
+            DbLineFacacde dbLineFacacde = new DbLineFacacde(productionLine.getFirestore(), productionLine.getProps().isLiveEnv());
+
+            LineItem lineItem = dbLineFacacde.getFor(itemId);
+            if (lineItem == null) {
+                rResponse = new RResponse(HTTP_CONFLICT, new RError("Failed to delete non-existing object, for id: " + itemId));
+            } else {
+                dbLineFacacde.deleteFor(itemId);
+                clockerService.deleteFor(itemId);
+
+                rResponse = new RResponse(HTTP_OK, "Deleted: " + lineItem.getId());
+            }
+        } catch (ExecutionException | InterruptedException | IllegalArgumentException e) {
+            e.printStackTrace();
+            rResponse = new RResponse(HTTP_INTERNAL_ERROR, new RError(e.getMessage()));
+        }
+
+        return rResponse;
+    }
+
     private void clockItemStartTime(Transition transition) throws ExecutionException, InterruptedException {
         String itemId = transition.getId();
         String stationId = transition.getCurrentStationId() == null ? productionLine.getStartStationId() : transition.getCurrentStationId();
 
-        clockerService.setTime(itemId, stationId, Operation.PREPARATION);
+        clockerService.setTime(itemId, stationId, Operation.START);
     }
     private void clockItemStopTime(Transition transition) throws ExecutionException, InterruptedException {
         String itemId = transition.getId();
 
-        clockerService.setTime(itemId, transition.getCurrentStationId(), Operation.PRODUCTION);
+        clockerService.setTime(itemId, transition.getCurrentStationId(), Operation.STOP);
     }
 }
