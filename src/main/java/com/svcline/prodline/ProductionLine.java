@@ -189,7 +189,7 @@ public class ProductionLine {
         return firestore;
     }
 
-    private void performStationChecks(LineItem actualItem, LineItem currentLineItem){
+    private void performStationChecks(LineItem actualItem, LineItem currentLineItem) {
         State newState = currentLineItem.getState();
         Station currentStation = getStation(currentLineItem.getCurrentStationId());
 

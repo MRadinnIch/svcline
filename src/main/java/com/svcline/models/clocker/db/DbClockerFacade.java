@@ -4,12 +4,15 @@ import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.svcline.models.clocker.Clocker;
 import com.svcline.models.clocker.Times;
+import com.svcline.models.clocker.bq.BigQueryService;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
 
 public class DbClockerFacade {
+    private static final Logger logger = Logger.getLogger(DbClockerFacade.class.getName());
     private static final String COLLECTION_LIVE = "clocker";
     private static final String COLLECTION_TEST = "clockerTest";
 
@@ -38,7 +41,7 @@ public class DbClockerFacade {
         DocumentSnapshot document = query.get();
 
         if (document.exists()) {
-            System.out.println("Clocker document: " + document);
+            logger.info("Clocker document: " + document);
 
             @SuppressWarnings("unchecked")
             ArrayList<Times> timesList = (ArrayList<Times>) document.get("timesList");

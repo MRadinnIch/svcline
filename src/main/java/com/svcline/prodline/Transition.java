@@ -16,6 +16,12 @@ public class Transition {
     public Transition() {
     }
 
+    public Transition(Transition from) {
+        this.id = from.getId();
+        this.currentStationId = from.getCurrentStationId();
+        this.state = from.getState();
+    }
+
     public Transition(String id) {
         this.id = id;
     }

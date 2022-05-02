@@ -45,6 +45,9 @@ public class LineService {
             if (actualItemDb == null) { // Check and validate the original item
                 rResponse = new RResponse(HTTP_NOT_FOUND,
                                           new RError("Original item not found for id " + itemId + "."));
+            } else if (actualItemDb.isDone()) {
+                rResponse = new RResponse(HTTP_CONFLICT,
+                                          new RError("Cannot produce an item twice."));
             } else if (!lineItemIn.validate()) { // Check and validate the "new" item
                 rResponse = new RResponse(HTTP_BAD_REQUEST,
                                           new RError("Failed to validate item for id " + itemId + ". Check arguments."));
@@ -52,13 +55,13 @@ public class LineService {
                 rResponse = new RResponse(HTTP_CONFLICT,
                                           new RError("Body ID not matching path ID. Check arguments."));
             } else {
+                // Item must exist and not be in START
+                clockItemStartTime(transition);
+
                 // We handle the line transition in the production line
                 LineItem verifiedItem = productionLine.fromStation(actualItemDb, lineItemIn);
 
                 dbLineFacacde.set(verifiedItem);
-
-                // Item must exist and not be in START
-                clockItemStartTime(transition);
 
                 rResponse = new RResponse(verifiedItem);
             }
@@ -127,13 +130,14 @@ public class LineService {
         return rResponse;
     }
 
-    public RResponse startProduction(Transition transition) {
+    public RResponse startProduction(Transition transitionIn) {
         // When we create a transition we're only interested in the ID.
-        if (transition.getId() == null)
-            return new RResponse(HTTP_BAD_REQUEST, new RError("Line initiation validation error for: " + transition));
+        if (transitionIn.getId() == null)
+            return new RResponse(HTTP_BAD_REQUEST, new RError("Line initiation validation error for: " + transitionIn));
 
         RResponse rResponse;
-        String itemId = transition.getId();
+        String itemId = transitionIn.getId();
+        Transition transition = new Transition(transitionIn);
         transition.setState(State.CREATED);
 
         try {

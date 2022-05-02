@@ -2,13 +2,11 @@ package com.svcline.handlers;
 
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
-import com.routler.RContext;
-import com.routler.RError;
-import com.routler.RResponse;
+import com.routler.*;
 import com.svcline.prodline.ProductLineConfiguration;
 import com.svcline.prodline.db.DbProdLineConfiguration;
-import com.routler.Route;
-import com.routler.Routeable;
+
+import java.util.logging.Logger;
 
 import static java.net.HttpURLConnection.*;
 

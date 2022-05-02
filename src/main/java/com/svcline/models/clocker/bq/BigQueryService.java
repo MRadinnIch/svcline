@@ -105,7 +105,7 @@ public class BigQueryService {
             ix++;
         }
 
-        System.out.println("Item production lasted: " + bqEntry.getItemProductionTimeInSeconds());
+        logger.info("Item production lasted: " + bqEntry.getItemProductionTimeInSeconds());
 
         Map<String, Object> rowContent = new HashMap<>();
         rowContent.put(ITEM_ID, bqEntry.getItemId());

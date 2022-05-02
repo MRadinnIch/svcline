@@ -2,13 +2,16 @@ package com.routler;
 
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
+import com.svcline.models.clocker.bq.BigQueryService;
 
+import java.util.logging.Logger;
 import java.util.ArrayList;
 
 import static java.net.HttpURLConnection.HTTP_NOT_IMPLEMENTED;
 
 // Route handler
 public class Routler {
+    private static final Logger logger = Logger.getLogger(Routler.class.getName());
     private static final ArrayList<Route> routes = new ArrayList<>();
 
     public Routler() {
@@ -30,7 +33,7 @@ public class Routler {
     private static boolean handlerExists(Routeable handler) {
         for (Route route : routes) {
             if (route.getHandler().getClass().equals(handler.getClass())) {
-                System.out.println("Handler class already exists!");
+                logger.info("Handler class already exists!");
                 return true;
             }
         }
@@ -44,7 +47,7 @@ public class Routler {
 
         for (Route route : routes) {
             if (route.equalsTo(path)) {
-                System.out.println("Route already exists, failed to register!!!");
+                logger.info("Route already exists, failed to register!!!");
                 return true;
             }
         }
@@ -54,11 +57,11 @@ public class Routler {
 
     @SuppressWarnings("unused")
     public static void listRoutes() {
-        System.out.println("Registered routes:");
+        logger.info("Registered routes:");
         for (Route route : routes) {
-            System.out.println(route.toString());
+            logger.info(route.toString());
         }
-        System.out.println("\n");
+        logger.info("\n");
     }
 
     public static RResponse handle(HttpRequest request, HttpResponse response, RContext RContext) {

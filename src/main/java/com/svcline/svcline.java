@@ -4,22 +4,24 @@ import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
-import com.svcline.handlers.ConfigurationHandler;
-import com.svcline.handlers.LineHandler;
 import com.routler.RContext;
 import com.routler.RError;
 import com.routler.RResponse;
+import com.routler.Routler;
+import com.svcline.handlers.ConfigurationHandler;
+import com.svcline.handlers.LineHandler;
 import com.svcline.models.Props;
 import com.svcline.prodline.ProductLineConfiguration;
 import com.svcline.prodline.ProductionLine;
-import com.routler.Routler;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Logger;
 
 public class svcline implements HttpFunction {
+    private static final Logger logger = Logger.getLogger(svcline.class.getName());
     private static ProductionLine productionLine = null;
     private static final Gson gson = new Gson();
 
@@ -103,7 +105,7 @@ public class svcline implements HttpFunction {
             cfg.loadFromDb(productionLine.getProps().getCurrentlyLoadedConfiguration());
 
             productionLine.init(cfg, productionLine.getProps());
-            System.out.println("Production line setup:\n" + gson.toJson(cfg));
+            logger.info("Production line setup:\n" + gson.toJson(cfg));
         } catch (InstantiationException | IOException e) {
             e.printStackTrace();
         }
@@ -123,7 +125,7 @@ public class svcline implements HttpFunction {
         props.setCurrentlyLoadedConfiguration(properties.getProperty("line.configuration"));
         props.setEnvironment(properties.getProperty("environment"));
 
-        System.out.println("Props: " + props);
+        logger.info("Props: " + props);
 
         return props;
     }*/

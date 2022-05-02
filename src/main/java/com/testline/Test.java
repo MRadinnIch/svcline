@@ -3,6 +3,7 @@ package com.testline;
 import com.routler.RResponse;
 import com.svcline.LineService;
 import com.svcline.models.*;
+import com.svcline.models.clocker.bq.BigQueryService;
 import com.svcline.prodline.*;
 
 import java.io.IOException;
@@ -11,9 +12,10 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 public class Test {
-    private static final int TIMEOUT = 1;
+    private static final Logger logger = Logger.getLogger(Test.class.getName());
 
     public static void main(String[] args) throws ExecutionException, InterruptedException {
         Props props;
@@ -22,7 +24,7 @@ public class Test {
             props.setEnvironment("test");
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Failed to load properties. Aborting execution.");
+            logger.info("Failed to load properties. Aborting execution.");
             return;
         }
 
@@ -76,14 +78,15 @@ public class Test {
             productionLine.init(productLineConfiguration, props);
         } catch (InstantiationException | IOException e) {
             e.printStackTrace();
-            System.out.println("Failed to init production line. Aborting execution.");
+            logger.info("Failed to init production line. Aborting execution.");
             return;
         }
         ///////////////// End product line configuration /////////////////
 
         LineService lineService = new LineService(productionLine);
 
-        ArrayList<String> itemIdList = new ArrayList<>(List.of("100001", "100002", "100003", "100004", "100005"));
+        //ArrayList<String> itemIdList = new ArrayList<>(List.of("100001", "100002", "100003", "100004", "100005"));
+        ArrayList<String> itemIdList = new ArrayList<>(List.of("100001"));
         for (String itemId : itemIdList) {
             Transition create = new Transition(itemId, station1.getId(), State.PASSED);
             Transition second = new Transition(itemId, station2.getId(), State.PASSED);
@@ -108,7 +111,22 @@ public class Test {
 
             //run(lineService.deleteLineEntryForItem(itemId), true);
         }
+
+        {
+            Transition create = new Transition("100001", station1.getId(), State.PASSED);
+            run(lineService.startProduction(create), false);
+            run(lineService.stationItemStart(create), false);
+
+            Transition transition = new Transition("200001", station1.getId(), State.PASSED);
+            run(lineService.stationItemStart(create), false);
+
+            Transition transition1 = new Transition("300001", station1.getId(), State.RETRIED);
+            run(lineService.startProduction(transition1), true);
+            run(lineService.stationItemStart(transition1), true);
+
+        }
     }
+
 
     @SuppressWarnings("SameParameterValue")
     private static void run(RResponse lr, boolean succeed) {
@@ -122,7 +140,6 @@ public class Test {
             throw new RuntimeException(e);
         }
 
-        System.out.println(lr);
         if (succeed)
             assert (lr.succeeded());
         else

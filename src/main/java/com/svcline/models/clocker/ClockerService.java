@@ -5,8 +5,10 @@ import com.svcline.models.clocker.db.DbClockerFacade;
 import com.svcline.prodline.ProductionLine;
 
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
 
 public class ClockerService {
+    private static final Logger logger = Logger.getLogger(ClockerService.class.getName());
     private ProductionLine productionLine;
 
     public ClockerService() {
@@ -39,7 +41,7 @@ public class ClockerService {
 
     public void deleteFor(String itemId) throws ExecutionException, InterruptedException {
         if (this.productionLine.getProps().isLiveEnv()) {
-            System.out.println("Not allowed to delete entry in production.");
+            logger.info("Not allowed to delete entry in production.");
             return;
         }
 
